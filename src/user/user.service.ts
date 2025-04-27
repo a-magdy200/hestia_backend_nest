@@ -28,15 +28,18 @@ export class UserService {
     filter: FilterQuery<User>,
     projection?: ProjectionType<User>,
     options?: QueryOptions<User>,
-  ): Promise<User|null> {
+  ): Promise<User | null> {
     return this.model.findOne(filter, projection, options);
   }
 
-  findOneById(id: string): Promise<User|null> {
+  findOneById(id: string): Promise<User | null> {
     return this.model.findById(id);
   }
 
-  async updateOne(id: string, updateUserDto: UpdateUserDto): Promise<User|null> {
+  async updateOne(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User | null> {
     return this.model.findByIdAndUpdate(id, updateUserDto);
   }
 

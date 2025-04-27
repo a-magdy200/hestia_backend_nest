@@ -8,6 +8,7 @@ import {
   Delete,
   Request,
   UnauthorizedException,
+  Put, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,11 +28,28 @@ export class UserController {
     return this.userService.findAll({});
   }
 
-  @Get('me')
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
   profile(@Request() req: Request & { user: { userId: string } }) {
+    console.log({ req });
     const userId = req?.user?.userId;
     if (userId) {
       return this.userService.findOneById(userId);
+    }
+    throw new UnauthorizedException();
+  }
+
+  @Put('profile')
+  async updateProfile(
+    @Request() req: Request & { user: { userId: string } },
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const userId = req?.user?.userId;
+    if (userId) {
+      const user = await this.userService.findOneById(userId);
+      if (user) {
+        return this.userService.updateOne(userId, updateUserDto);
+      }
     }
     throw new UnauthorizedException();
   }

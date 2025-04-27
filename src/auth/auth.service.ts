@@ -14,16 +14,16 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(
-    username: string,
-    password: string,
-  ): Promise<any | null> {
-    const user = await this.userService.findOne({
-              email: username,
-      }, {
+  async validateUser(username: string, password: string): Promise<any | null> {
+    const user = await this.userService.findOne(
+      {
+        email: username,
+      },
+      {
         email: 1,
         password: 1,
-    });
+      },
+    );
     if (user) {
       if (password === user.password) {
         return user._id;
@@ -44,6 +44,20 @@ export class AuthService {
       const payload = { sub: userId };
       return {
         access_token: this.jwtService.sign(payload),
+        refresh_token: this.jwtService.sign(payload),
+      };
+    } else {
+      throw new UnauthorizedException();
+    }
+  }
+
+  async refreshToken(refreshToken: string): Promise<UserLoginResponse> {
+    const { sub } = this.jwtService.decode(refreshToken);
+    if (sub) {
+      const payload = { sub };
+      return {
+        access_token: this.jwtService.sign(payload),
+        refresh_token: this.jwtService.sign(payload),
       };
     } else {
       throw new UnauthorizedException();
@@ -52,14 +66,13 @@ export class AuthService {
 
   async register(createUserDto: CreateUserDto): Promise<UserLoginResponse> {
     const { first_name, last_name, email, password } = createUserDto;
-    const existingUser = await this.userService.findOne({  email });
-    console.log({createUserDto, existingUser})
+    const existingUser = await this.userService.findOne({ email });
     if (existingUser) {
       throw new BadRequestException('Email is already taken');
     }
 
     // Hash the password
-    const hashedPassword = password;//await bcrypt.hash(password, 10);
+    const hashedPassword = password; //await bcrypt.hash(password, 10);
 
     // Create the user
     const user: Partial<User> = {};

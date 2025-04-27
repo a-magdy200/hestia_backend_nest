@@ -19,4 +19,10 @@ export class AuthController {
   async register(@Body() requestBody: CreateUserDto) {
     return this.authService.register(requestBody);
   }
+
+  @Post('refresh')
+  @BypassAuth()
+  async refresh(@Body() requestBody: { refresh_token: string }) {
+    return this.authService.refreshToken(requestBody.refresh_token);
+  }
 }
