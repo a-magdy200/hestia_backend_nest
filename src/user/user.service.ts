@@ -12,7 +12,7 @@ export class UserService {
     @InjectModel(User.name) private readonly model: Model<UserDocument>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: Partial<User>): Promise<User> {
     return await this.model.create(createUserDto);
   }
 
@@ -29,7 +29,7 @@ export class UserService {
     projection?: ProjectionType<User>,
     options?: QueryOptions<User>,
   ): Promise<User|null> {
-    return this.model.findOne(options);
+    return this.model.findOne(filter, projection, options);
   }
 
   findOneById(id: string): Promise<User|null> {

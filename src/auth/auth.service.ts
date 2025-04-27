@@ -19,13 +19,10 @@ export class AuthService {
     password: string,
   ): Promise<any | null> {
     const user = await this.userService.findOne({
-      where: {
-        email: username,
-      },
-      select: {
+              email: username,
+      }, {
         email: 1,
         password: 1,
-      },
     });
     if (user) {
       if (password === user.password) {
@@ -55,7 +52,8 @@ export class AuthService {
 
   async register(createUserDto: CreateUserDto): Promise<UserLoginResponse> {
     const { first_name, last_name, email, password } = createUserDto;
-    const existingUser = await this.userService.findOne({ where: { email } });
+    const existingUser = await this.userService.findOne({  email });
+    console.log({createUserDto, existingUser})
     if (existingUser) {
       throw new BadRequestException('Email is already taken');
     }
@@ -64,7 +62,7 @@ export class AuthService {
     const hashedPassword = password;//await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = new User();
+    const user: Partial<User> = {};
     user.first_name = first_name;
     user.last_name = last_name;
     user.email = email;
