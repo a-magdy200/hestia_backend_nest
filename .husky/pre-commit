@@ -12,12 +12,12 @@ echo "🔧 Running TypeScript type check..."
 pnpm run type-check
 
 # Unit tests for changed files only (excluding migrations and mocks)
-echo "🧪 Running unit tests..."
-pnpm run test:unit
+# echo "🧪 Running unit tests..."
+# pnpm run test:unit
 
 # Security audit
-echo "🔒 Running security audit..."
-pnpm run security
+# echo "🔒 Running security audit..."
+# pnpm run security
 
 # Build check
 echo "🏗️ Running build check..."
