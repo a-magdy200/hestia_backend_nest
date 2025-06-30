@@ -1,0 +1,49 @@
+{
+  "extends": ["config:base", ":semanticCommits", ":semanticCommitTypeAll(chore)"],
+  "schedule": ["before 4am on monday"],
+  "timezone": "UTC",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking"]
+    },
+    {
+      "matchPackagePatterns": ["^@nestjs/"],
+      "groupName": "NestJS packages",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "TypeScript types",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["eslint", "prettier"],
+      "groupName": "Linting and formatting",
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["jest", "ts-jest"],
+      "groupName": "Testing packages",
+      "automerge": true
+    }
+  ],
+  "assignees": ["@Ahmed"],
+  "reviewers": ["@Ahmed"],
+  "labels": ["dependencies"],
+  "commitMessageAction": "Update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "rangeStrategy": "bump",
+  "bumpVersion": "patch"
+}

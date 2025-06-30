@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running comprehensive pre-commit checks..."
+
+# Run lint-staged (handles staged files only)
+echo "📝 Running lint-staged..."
+pnpm lint-staged
+
+# Type checking (excluding migrations and mocks)
+echo "🔧 Running TypeScript type check..."
+pnpm run type-check
+
+# Unit tests for changed files only (excluding migrations and mocks)
+echo "🧪 Running unit tests..."
+pnpm run test:unit
+
+# Security audit
+echo "🔒 Running security audit..."
+pnpm run security
+
+# Build check
+echo "🏗️ Running build check..."
+pnpm run build
+
+echo "✅ All pre-commit checks passed!" 

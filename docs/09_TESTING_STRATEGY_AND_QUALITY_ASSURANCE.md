@@ -2,27 +2,32 @@
 
 ## 📋 Document Information
 
-| **Document Type** | Testing Strategy & Quality Assurance |
-|-------------------|--------------------------------------|
-| **Version** | 1.0.0 |
-| **Last Updated** | December 28, 2024 |
-| **Next Review** | January 28, 2025 |
-| **Document Owner** | QA & Testing Team |
-| **Stakeholders** | Development Team, DevOps Team, Product Team, Customers |
-| **Classification** | Testing & QA Document |
+| **Document Type**  | Testing Strategy & Quality Assurance                                  |
+| ------------------ | --------------------------------------------------------------------- |
+| **Version**        | 2.0.0                                                                 |
+| **Last Updated**   | December 28, 2024                                                     |
+| **Next Review**    | February 28, 2025                                                     |
+| **Document Owner** | QA & Testing Team                                                     |
+| **Stakeholders**   | Development Team, DevOps Team, Product Team, Customers, Security Team |
+| **Classification** | Testing & QA Document                                                 |
+| **Status**         | Active - Under Development                                            |
 
 ---
 
 ## 🎯 Executive Summary
 
-This document defines the comprehensive testing strategy and quality assurance framework for the Hestia Enterprise SaaS Platform. It ensures enterprise-grade quality, reliability, and performance through systematic testing methodologies and automated quality assurance processes.
+This document defines the comprehensive testing strategy and quality assurance framework for the Hestia Enterprise SaaS Platform. It ensures enterprise-grade quality, reliability, and performance through systematic testing methodologies, automated quality assurance processes, and continuous quality improvement.
 
-### **Testing Strategy**
-- **Test-Driven Development**: Quality built into development process
-- **Comprehensive Coverage**: Unit, integration, system, and user acceptance testing
-- **Automation First**: Automated testing for efficiency and reliability
-- **Continuous Quality**: Quality gates at every stage of development
-- **Performance Excellence**: Performance testing and optimization
+### **Comprehensive Testing Strategy**
+
+- **🧪 Test-Driven Development**: Quality built into every development process and workflow
+- **📊 Comprehensive Coverage**: Unit, integration, system, E2E, and user acceptance testing
+- **🤖 Automation First**: Automated testing for efficiency, reliability, and continuous deployment
+- **🔄 Continuous Quality**: Quality gates at every stage of development and deployment
+- **⚡ Performance Excellence**: Performance testing, optimization, and monitoring
+- **🛡️ Security Testing**: Comprehensive security testing and vulnerability assessment
+- **🌍 Global Testing**: Multi-region, multi-language, and multi-platform testing
+- **📈 Quality Analytics**: Comprehensive metrics, reporting, and continuous improvement
 
 ---
 
@@ -72,6 +77,7 @@ This document defines the comprehensive testing strategy and quality assurance f
 ### **Unit Testing Framework**
 
 #### **Testing Configuration**
+
 ```typescript
 // Jest configuration for unit testing
 export default {
@@ -80,27 +86,23 @@ export default {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': 'ts-jest',
   },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/main.ts',
-    '!src/**/index.ts'
-  ],
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/main.ts', '!src/**/index.ts'],
   coverageThreshold: {
     global: {
       branches: 80,
       functions: 80,
       lines: 80,
-      statements: 80
-    }
+      statements: 80,
+    },
   },
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts']
+  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
 };
 ```
 
 #### **Service Layer Testing**
+
 ```typescript
 // Recipe service unit tests
 describe('RecipeService', () => {
@@ -119,17 +121,17 @@ describe('RecipeService', () => {
             findById: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
-            search: jest.fn()
-          }
+            search: jest.fn(),
+          },
         },
         {
           provide: ValidationService,
           useValue: {
             validateRecipe: jest.fn(),
-            validateIngredients: jest.fn()
-          }
-        }
-      ]
+            validateIngredients: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<RecipeService>(RecipeService);
@@ -144,14 +146,14 @@ describe('RecipeService', () => {
         title: 'Test Recipe',
         description: 'Test Description',
         instructions: 'Test Instructions',
-        ingredients: []
+        ingredients: [],
       };
-      
+
       const expectedRecipe = {
         id: 'recipe_123',
         ...recipeData,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       mockValidationService.validateRecipe.mockResolvedValue(true);
@@ -165,7 +167,7 @@ describe('RecipeService', () => {
       expect(mockValidationService.validateRecipe).toHaveBeenCalledWith(recipeData);
       expect(mockRepository.create).toHaveBeenCalledWith({
         ...recipeData,
-        userId: 'user_123'
+        userId: 'user_123',
       });
     });
 
@@ -175,15 +177,15 @@ describe('RecipeService', () => {
         title: '', // Invalid empty title
         description: 'Test Description',
         instructions: 'Test Instructions',
-        ingredients: []
+        ingredients: [],
       };
 
       mockValidationService.validateRecipe.mockResolvedValue(false);
 
       // Act & Assert
-      await expect(service.createRecipe(recipeData, 'user_123'))
-        .rejects
-        .toThrow('Invalid recipe data');
+      await expect(service.createRecipe(recipeData, 'user_123')).rejects.toThrow(
+        'Invalid recipe data',
+      );
     });
 
     it('should handle database errors gracefully', async () => {
@@ -192,16 +194,16 @@ describe('RecipeService', () => {
         title: 'Test Recipe',
         description: 'Test Description',
         instructions: 'Test Instructions',
-        ingredients: []
+        ingredients: [],
       };
 
       mockValidationService.validateRecipe.mockResolvedValue(true);
       mockRepository.create.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(service.createRecipe(recipeData, 'user_123'))
-        .rejects
-        .toThrow('Failed to create recipe');
+      await expect(service.createRecipe(recipeData, 'user_123')).rejects.toThrow(
+        'Failed to create recipe',
+      );
     });
   });
 
@@ -212,7 +214,7 @@ describe('RecipeService', () => {
       const expectedRecipe = {
         id: recipeId,
         title: 'Test Recipe',
-        description: 'Test Description'
+        description: 'Test Description',
       };
 
       mockRepository.findById.mockResolvedValue(expectedRecipe);
@@ -231,15 +233,14 @@ describe('RecipeService', () => {
       mockRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.getRecipe(recipeId))
-        .rejects
-        .toThrow('Recipe not found');
+      await expect(service.getRecipe(recipeId)).rejects.toThrow('Recipe not found');
     });
   });
 });
 ```
 
 #### **Repository Layer Testing**
+
 ```typescript
 // Recipe repository unit tests
 describe('RecipeRepository', () => {
@@ -254,10 +255,10 @@ describe('RecipeRepository', () => {
           provide: DataSource,
           useValue: {
             createQueryRunner: jest.fn(),
-            getRepository: jest.fn()
-          }
-        }
-      ]
+            getRepository: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     repository = module.get<RecipeRepository>(RecipeRepository);
@@ -270,16 +271,16 @@ describe('RecipeRepository', () => {
       const recipeId = 'recipe_123';
       const mockQueryRunner = {
         manager: {
-          findOne: jest.fn()
+          findOne: jest.fn(),
         },
-        release: jest.fn()
+        release: jest.fn(),
       };
 
       const expectedRecipe = {
         id: recipeId,
         title: 'Test Recipe',
         ingredients: [],
-        user: { id: 'user_123', name: 'Test User' }
+        user: { id: 'user_123', name: 'Test User' },
       };
 
       mockDataSource.createQueryRunner.mockReturnValue(mockQueryRunner as any);
@@ -292,7 +293,7 @@ describe('RecipeRepository', () => {
       expect(result).toEqual(expectedRecipe);
       expect(mockQueryRunner.manager.findOne).toHaveBeenCalledWith(Recipe, {
         where: { id: recipeId },
-        relations: ['ingredients', 'user', 'ratings']
+        relations: ['ingredients', 'user', 'ratings'],
       });
       expect(mockQueryRunner.release).toHaveBeenCalled();
     });
@@ -303,6 +304,7 @@ describe('RecipeRepository', () => {
 ### **Business Logic Testing**
 
 #### **Validation Service Testing**
+
 ```typescript
 // Validation service unit tests
 describe('ValidationService', () => {
@@ -310,7 +312,7 @@ describe('ValidationService', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [ValidationService]
+      providers: [ValidationService],
     }).compile();
 
     service = module.get<ValidationService>(ValidationService);
@@ -324,7 +326,7 @@ describe('ValidationService', () => {
         description: 'Valid description',
         instructions: 'Valid instructions',
         cookingTime: 30,
-        servings: 4
+        servings: 4,
       };
 
       // Act
@@ -339,7 +341,7 @@ describe('ValidationService', () => {
       const recipeData = {
         title: '',
         description: 'Valid description',
-        instructions: 'Valid instructions'
+        instructions: 'Valid instructions',
       };
 
       // Act
@@ -355,7 +357,7 @@ describe('ValidationService', () => {
         title: 'Valid Recipe',
         description: 'Valid description',
         instructions: 'Valid instructions',
-        cookingTime: -5 // Invalid negative time
+        cookingTime: -5, // Invalid negative time
       };
 
       // Act
@@ -375,6 +377,7 @@ describe('ValidationService', () => {
 ### **API Integration Testing**
 
 #### **API Endpoint Testing**
+
 ```typescript
 // Recipe API integration tests
 describe('RecipeController (e2e)', () => {
@@ -389,13 +392,13 @@ describe('RecipeController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     authService = moduleFixture.get<AuthService>(AuthService);
-    
+
     // Setup test database
     await setupTestDatabase();
-    
+
     // Create test user
     testUser = await createTestUser();
-    
+
     await app.init();
   });
 
@@ -412,9 +415,7 @@ describe('RecipeController (e2e)', () => {
         title: 'Integration Test Recipe',
         description: 'Test description',
         instructions: 'Test instructions',
-        ingredients: [
-          { name: 'Test Ingredient', quantity: 1, unit: 'cup' }
-        ]
+        ingredients: [{ name: 'Test Ingredient', quantity: 1, unit: 'cup' }],
       };
 
       // Act
@@ -434,14 +435,11 @@ describe('RecipeController (e2e)', () => {
       // Arrange
       const recipeData = {
         title: 'Unauthorized Recipe',
-        description: 'Test description'
+        description: 'Test description',
       };
 
       // Act & Assert
-      await request(app.getHttpServer())
-        .post('/recipes')
-        .send(recipeData)
-        .expect(401);
+      await request(app.getHttpServer()).post('/recipes').send(recipeData).expect(401);
     });
 
     it('should validate recipe data', async () => {
@@ -449,7 +447,7 @@ describe('RecipeController (e2e)', () => {
       const token = await authService.generateToken(testUser);
       const invalidRecipeData = {
         title: '', // Invalid empty title
-        description: 'Test description'
+        description: 'Test description',
       };
 
       // Act
@@ -501,6 +499,7 @@ describe('RecipeController (e2e)', () => {
 ### **Database Integration Testing**
 
 #### **Database Transaction Testing**
+
 ```typescript
 // Database integration tests
 describe('Database Integration', () => {
@@ -536,12 +535,12 @@ describe('Database Integration', () => {
         const recipe = await queryRunner.manager.save(Recipe, {
           title: 'Transaction Test Recipe',
           description: 'Test description',
-          userId: 'user_123'
+          userId: 'user_123',
         });
 
         const ingredient = await queryRunner.manager.save(Ingredient, {
           name: 'Test Ingredient',
-          recipeId: recipe.id
+          recipeId: recipe.id,
         });
 
         await queryRunner.commitTransaction();
@@ -549,7 +548,7 @@ describe('Database Integration', () => {
         // Assert
         const savedRecipe = await recipeRepository.findOne({
           where: { id: recipe.id },
-          relations: ['ingredients']
+          relations: ['ingredients'],
         });
 
         expect(savedRecipe).toBeDefined();
@@ -574,7 +573,7 @@ describe('Database Integration', () => {
         const recipe = await queryRunner.manager.save(Recipe, {
           title: 'Rollback Test Recipe',
           description: 'Test description',
-          userId: 'user_123'
+          userId: 'user_123',
         });
 
         // Simulate error
@@ -583,16 +582,16 @@ describe('Database Integration', () => {
         // This should not execute
         await queryRunner.manager.save(Ingredient, {
           name: 'Test Ingredient',
-          recipeId: recipe.id
+          recipeId: recipe.id,
         });
 
         await queryRunner.commitTransaction();
       } catch (error) {
         await queryRunner.rollbackTransaction();
-        
+
         // Assert - Verify rollback
         const savedRecipe = await recipeRepository.findOne({
-          where: { id: recipe.id }
+          where: { id: recipe.id },
         });
         expect(savedRecipe).toBeNull();
       } finally {
@@ -610,6 +609,7 @@ describe('Database Integration', () => {
 ### **User Journey Testing**
 
 #### **Complete User Workflow Testing**
+
 ```typescript
 // E2E user journey tests
 describe('User Journey E2E', () => {
@@ -629,7 +629,7 @@ describe('User Journey E2E', () => {
     // Setup browser
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
   });
 
@@ -656,7 +656,7 @@ describe('User Journey E2E', () => {
       await page.fill('[data-testid="firstName"]', 'Test');
       await page.fill('[data-testid="lastName"]', 'User');
       await page.click('[data-testid="register-button"]');
-      
+
       await page.waitForSelector('[data-testid="dashboard"]');
 
       // 2. Navigate to recipe creation
@@ -689,7 +689,7 @@ describe('User Journey E2E', () => {
 
       const ingredientCount = await page.$$eval(
         '[data-testid="ingredient-item"]',
-        elements => elements.length
+        elements => elements.length,
       );
       expect(ingredientCount).toBe(1);
     });
@@ -726,14 +726,13 @@ describe('User Journey E2E', () => {
       // Verify results
       const resultCount = await page.$$eval(
         '[data-testid="recipe-card"]',
-        elements => elements.length
+        elements => elements.length,
       );
       expect(resultCount).toBeGreaterThan(0);
 
       // Verify filters applied
-      const activeFilters = await page.$$eval(
-        '[data-testid="active-filter"]',
-        elements => elements.map(el => el.textContent)
+      const activeFilters = await page.$$eval('[data-testid="active-filter"]', elements =>
+        elements.map(el => el.textContent),
       );
       expect(activeFilters).toContain('italian');
     });
@@ -744,13 +743,14 @@ describe('User Journey E2E', () => {
 ### **Cross-Browser Testing**
 
 #### **Browser Compatibility Testing**
+
 ```typescript
 // Cross-browser testing
 describe('Cross-Browser Compatibility', () => {
   const browsers = [
     { name: 'Chrome', executablePath: '/usr/bin/google-chrome' },
     { name: 'Firefox', executablePath: '/usr/bin/firefox' },
-    { name: 'Safari', executablePath: '/usr/bin/safari' }
+    { name: 'Safari', executablePath: '/usr/bin/safari' },
   ];
 
   browsers.forEach(browserConfig => {
@@ -762,7 +762,7 @@ describe('Cross-Browser Compatibility', () => {
         browser = await puppeteer.launch({
           headless: true,
           executablePath: browserConfig.executablePath,
-          args: ['--no-sandbox', '--disable-setuid-sandbox']
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
       });
 
@@ -784,17 +784,13 @@ describe('Cross-Browser Compatibility', () => {
         await page.waitForSelector('[data-testid="recipe-details"]');
 
         // Verify layout
-        const title = await page.$eval(
-          '[data-testid="recipe-title"]',
-          el => el.textContent
-        );
+        const title = await page.$eval('[data-testid="recipe-title"]', el => el.textContent);
         expect(title).toBeTruthy();
 
         // Verify responsive design
         await page.setViewport({ width: 768, height: 1024 });
-        const isMobileLayout = await page.$eval(
-          '[data-testid="recipe-container"]',
-          el => el.classList.contains('mobile-layout')
+        const isMobileLayout = await page.$eval('[data-testid="recipe-container"]', el =>
+          el.classList.contains('mobile-layout'),
         );
         expect(isMobileLayout).toBe(true);
       });
@@ -810,7 +806,7 @@ describe('Cross-Browser Compatibility', () => {
         // Verify form state
         const titleValue = await page.$eval(
           '[data-testid="recipe-title"]',
-          el => (el as HTMLInputElement).value
+          el => (el as HTMLInputElement).value,
         );
         expect(titleValue).toBe('Browser Test Recipe');
       });
@@ -826,6 +822,7 @@ describe('Cross-Browser Compatibility', () => {
 ### **Load Testing**
 
 #### **API Performance Testing**
+
 ```typescript
 // API load testing
 describe('API Performance', () => {
@@ -856,8 +853,8 @@ describe('API Performance', () => {
           .send({
             title: `Concurrent Recipe ${i}`,
             description: 'Test description',
-            instructions: 'Test instructions'
-          })
+            instructions: 'Test instructions',
+          }),
       );
 
       const responses = await Promise.all(requests);
@@ -893,6 +890,7 @@ describe('API Performance', () => {
 ### **Database Performance Testing**
 
 #### **Query Performance Testing**
+
 ```typescript
 // Database performance testing
 describe('Database Performance', () => {
@@ -942,7 +940,7 @@ describe('Database Performance', () => {
         .select([
           'AVG(recipe.cookingTime) as avgCookingTime',
           'COUNT(recipe.id) as totalRecipes',
-          'COUNT(DISTINCT recipe.userId) as uniqueUsers'
+          'COUNT(DISTINCT recipe.userId) as uniqueUsers',
         ])
         .getRawOne();
 
@@ -964,6 +962,7 @@ describe('Database Performance', () => {
 ### **Security Vulnerability Testing**
 
 #### **Authentication Security Testing**
+
 ```typescript
 // Security testing
 describe('Security Testing', () => {
@@ -989,12 +988,10 @@ describe('Security Testing', () => {
 
       for (let i = 0; i < attempts; i++) {
         try {
-          await request(app.getHttpServer())
-            .post('/auth/login')
-            .send({
-              email: 'test@example.com',
-              password: 'wrongpassword'
-            });
+          await request(app.getHttpServer()).post('/auth/login').send({
+            email: 'test@example.com',
+            password: 'wrongpassword',
+          });
         } catch (error) {
           failedAttempts.push(error.response.status);
         }
@@ -1022,7 +1019,7 @@ describe('Security Testing', () => {
         .set('Authorization', `Bearer ${testToken}`)
         .send({
           title: xssPayload,
-          description: 'Test description'
+          description: 'Test description',
         })
         .expect(400);
 
@@ -1039,6 +1036,7 @@ describe('Security Testing', () => {
 ### **Coverage Reporting**
 
 #### **Coverage Configuration**
+
 ```typescript
 // Coverage configuration
 export default {
@@ -1051,32 +1049,33 @@ export default {
     '!src/**/index.ts',
     '!src/test/**',
     '!src/**/*.spec.ts',
-    '!src/**/*.test.ts'
+    '!src/**/*.test.ts',
   ],
   coverageThreshold: {
     global: {
       branches: 80,
       functions: 80,
       lines: 80,
-      statements: 80
+      statements: 80,
     },
     './src/services/': {
       branches: 90,
       functions: 90,
       lines: 90,
-      statements: 90
+      statements: 90,
     },
     './src/controllers/': {
       branches: 85,
       functions: 85,
       lines: 85,
-      statements: 85
-    }
-  }
+      statements: 85,
+    },
+  },
 };
 ```
 
 #### **Quality Metrics Service**
+
 ```typescript
 // Quality metrics service
 @Injectable()
@@ -1088,7 +1087,7 @@ export class QualityMetricsService {
       performance: await this.getPerformanceMetrics(),
       security: await this.getSecurityMetrics(),
       accessibility: await this.getAccessibilityMetrics(),
-      overallScore: 0
+      overallScore: 0,
     };
 
     // Calculate overall score
@@ -1099,24 +1098,24 @@ export class QualityMetricsService {
 
   private async getCoverageMetrics(): Promise<CoverageMetrics> {
     const coverage = await this.parseCoverageReport();
-    
+
     return {
       lines: coverage.lines.pct,
       functions: coverage.functions.pct,
       branches: coverage.branches.pct,
       statements: coverage.statements.pct,
-      meetsThreshold: this.checkCoverageThreshold(coverage)
+      meetsThreshold: this.checkCoverageThreshold(coverage),
     };
   }
 
   private async getPerformanceMetrics(): Promise<PerformanceMetrics> {
     const performanceTests = await this.runPerformanceTests();
-    
+
     return {
       averageResponseTime: performanceTests.averageResponseTime,
       throughput: performanceTests.throughput,
       errorRate: performanceTests.errorRate,
-      meetsThreshold: performanceTests.errorRate < 0.01
+      meetsThreshold: performanceTests.errorRate < 0.01,
     };
   }
 
@@ -1125,14 +1124,14 @@ export class QualityMetricsService {
       coverage: 0.3,
       performance: 0.25,
       security: 0.25,
-      accessibility: 0.2
+      accessibility: 0.2,
     };
 
     return (
-      (report.coverage.lines * weights.coverage) +
+      report.coverage.lines * weights.coverage +
       (report.performance.meetsThreshold ? 100 : 0) * weights.performance +
-      (report.security.score * weights.security) +
-      (report.accessibility.score * weights.accessibility)
+      report.security.score * weights.security +
+      report.accessibility.score * weights.accessibility
     );
   }
 }
@@ -1145,20 +1144,21 @@ export class QualityMetricsService {
 ### **CI/CD Pipeline Testing**
 
 #### **GitHub Actions Workflow**
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:13
@@ -1171,44 +1171,44 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run linting
-      run: npm run lint
-    
-    - name: Run unit tests
-      run: npm run test:unit
-    
-    - name: Run integration tests
-      run: npm run test:integration
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-    
-    - name: Run E2E tests
-      run: npm run test:e2e
-    
-    - name: Generate coverage report
-      run: npm run test:coverage
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage/lcov.info
-    
-    - name: Performance testing
-      run: npm run test:performance
-    
-    - name: Security testing
-      run: npm run test:security
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+
+      - name: Performance testing
+        run: npm run test:performance
+
+      - name: Security testing
+        run: npm run test:security
 ```
 
 ---
@@ -1226,7 +1226,7 @@ jobs:
 
 ---
 
-*Document Version: 1.0.0*  
-*Last Updated: December 28, 2024*  
-*Status: Testing & QA Document*  
-*Next Review: January 28, 2025* 
+_Document Version: 1.0.0_  
+_Last Updated: December 28, 2024_  
+_Status: Testing & QA Document_  
+_Next Review: January 28, 2025_

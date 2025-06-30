@@ -2,29 +2,34 @@
 
 ## 📋 Document Information
 
-| **Document Type** | Technical Architecture & Design |
-|-------------------|---------------------------------|
-| **Version** | 1.0.0 |
-| **Last Updated** | December 28, 2024 |
-| **Next Review** | January 28, 2025 |
-| **Document Owner** | Technical Architecture Team |
-| **Stakeholders** | Development Team, DevOps Team, Security Team, Product Team |
-| **Classification** | Technical Design Document |
+| **Document Type**  | Technical Architecture & Design                                                 |
+| ------------------ | ------------------------------------------------------------------------------- |
+| **Version**        | 2.0.0                                                                           |
+| **Last Updated**   | December 28, 2024                                                               |
+| **Next Review**    | February 28, 2025                                                               |
+| **Document Owner** | Technical Architecture Team                                                     |
+| **Stakeholders**   | Development Team, DevOps Team, Security Team, Product Team, Infrastructure Team |
+| **Classification** | Technical Design Document                                                       |
+| **Status**         | Active - Under Development                                                      |
 
 ---
 
 ## 🎯 Executive Summary
 
-This document defines the comprehensive technical architecture and design for the Hestia Enterprise SaaS Platform. It follows clean architecture principles, domain-driven design, and enterprise-grade patterns to ensure scalability, security, and maintainability.
+This document defines the comprehensive technical architecture and design for the Hestia Enterprise SaaS Platform. It follows clean architecture principles, domain-driven design, and enterprise-grade patterns to ensure scalability, security, maintainability, and performance at enterprise scale.
 
-### **Architecture Principles**
-1. **Clean Architecture**: Separation of concerns with clear layer boundaries
-2. **Domain-Driven Design**: Business logic centered around domain models
-3. **Microservices Ready**: Modular design supporting future microservices migration
-4. **Security First**: Comprehensive security at every layer
-5. **Scalability**: Horizontal and vertical scaling capabilities
-6. **Observability**: Comprehensive monitoring and logging
-7. **Resilience**: Fault tolerance and disaster recovery
+### **Core Architecture Principles**
+
+1. **🏗️ Clean Architecture**: Strict separation of concerns with clear layer boundaries and dependency inversion
+2. **🎯 Domain-Driven Design**: Business logic centered around rich domain models and ubiquitous language
+3. **🔧 Microservices Ready**: Modular design supporting seamless future microservices migration
+4. **🛡️ Security First**: Comprehensive security implementation at every architectural layer
+5. **📈 Infinite Scalability**: Horizontal and vertical scaling capabilities with auto-scaling support
+6. **👁️ Complete Observability**: Comprehensive monitoring, logging, tracing, and alerting
+7. **🔄 Resilience & Reliability**: Fault tolerance, disaster recovery, and high availability
+8. **⚡ Performance Excellence**: Optimized for speed, efficiency, and resource utilization
+9. **🌍 Global Distribution**: Multi-region deployment with edge computing capabilities
+10. **🔗 API-First Design**: Comprehensive API ecosystem with extensive integration capabilities
 
 ---
 
@@ -85,21 +90,23 @@ This document defines the comprehensive technical architecture and design for th
 
 ### **Backend Technologies**
 
-| **Component** | **Technology** | **Version** | **Purpose** |
-|---------------|----------------|-------------|-------------|
-| **Runtime** | Node.js | 18.x LTS | JavaScript runtime environment |
-| **Language** | TypeScript | 5.x | Type-safe JavaScript development |
-| **Framework** | NestJS | 10.x | Modular server-side application framework |
-| **Database** | PostgreSQL | 15.x | Primary relational database |
-| **ORM** | TypeORM | 0.3.x | Database abstraction and migrations |
-| **Cache** | Redis | 7.x | High-performance caching and sessions |
-| **Message Queue** | RabbitMQ | 3.12.x | Asynchronous message processing |
-| **Search** | Custom Search Engine | - | Full-text search and analytics |
+| **Component**     | **Technology**       | **Version** | **Purpose**                               |
+| ----------------- | -------------------- | ----------- | ----------------------------------------- |
+| **Runtime**       | Node.js              | 18.x LTS    | JavaScript runtime environment            |
+| **Language**      | TypeScript           | 5.x         | Type-safe JavaScript development          |
+| **Framework**     | NestJS               | 10.x        | Modular server-side application framework |
+| **Database**      | PostgreSQL           | 15.x        | Primary relational database               |
+| **ORM**           | TypeORM              | 0.3.x       | Database abstraction and migrations       |
+| **Cache**         | Redis                | 7.x         | High-performance caching and sessions     |
+| **Message Queue** | RabbitMQ             | 3.12.x      | Asynchronous message processing           |
+| **Search**        | Custom Search Engine | -           | Full-text search and analytics            |
 
 ### **Custom Search Engine Implementation**
 
 #### **Architecture Decision**
+
 The platform implements a custom search engine instead of using Elasticsearch to:
+
 - **Reduce Infrastructure Complexity**: Eliminate dependency on external search service
 - **Cost Optimization**: Avoid Elasticsearch licensing and infrastructure costs
 - **Performance Control**: Optimize search algorithms for specific use cases
@@ -109,6 +116,7 @@ The platform implements a custom search engine instead of using Elasticsearch to
 #### **Search Engine Components**
 
 ##### **1. Full-Text Search Service**
+
 ```typescript
 @Injectable()
 export class SearchService {
@@ -120,13 +128,14 @@ export class SearchService {
 
   async searchRecipes(query: SearchQuery): Promise<SearchResult<Recipe>> {
     const cacheKey = `search:recipes:${this.hashQuery(query)}`;
-    
+
     // Check cache first
     const cached = await this.cacheService.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
     // Build search query
-    const qb = this.recipeRepository.createQueryBuilder('recipe')
+    const qb = this.recipeRepository
+      .createQueryBuilder('recipe')
       .leftJoinAndSelect('recipe.ingredients', 'ingredient')
       .leftJoinAndSelect('recipe.categories', 'category')
       .leftJoinAndSelect('recipe.tags', 'tag');
@@ -135,9 +144,9 @@ export class SearchService {
     if (query.text) {
       qb.andWhere(
         '(recipe.title ILIKE :text OR recipe.description ILIKE :text OR ' +
-        'ingredient.name ILIKE :text OR category.name ILIKE :text OR ' +
-        'tag.name ILIKE :text)',
-        { text: `%${query.text}%` }
+          'ingredient.name ILIKE :text OR category.name ILIKE :text OR ' +
+          'tag.name ILIKE :text)',
+        { text: `%${query.text}%` },
       );
     }
 
@@ -158,9 +167,12 @@ export class SearchService {
     switch (query.sortBy) {
       case 'relevance':
         // Custom relevance scoring
-        qb.addSelect('CASE WHEN recipe.title ILIKE :exactText THEN 3 ' +
-                    'WHEN recipe.description ILIKE :exactText THEN 2 ' +
-                    'ELSE 1 END', 'relevance_score')
+        qb.addSelect(
+          'CASE WHEN recipe.title ILIKE :exactText THEN 3 ' +
+            'WHEN recipe.description ILIKE :exactText THEN 2 ' +
+            'ELSE 1 END',
+          'relevance_score',
+        )
           .setParameter('exactText', query.text)
           .orderBy('relevance_score', 'DESC');
         break;
@@ -175,8 +187,7 @@ export class SearchService {
     }
 
     // Apply pagination
-    qb.skip((query.page - 1) * query.limit)
-      .take(query.limit);
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
 
     const [recipes, total] = await qb.getManyAndCount();
 
@@ -190,24 +201,25 @@ export class SearchService {
 
     // Cache results for 5 minutes
     await this.cacheService.set(cacheKey, JSON.stringify(result), 300);
-    
+
     return result;
   }
 
   async searchIngredients(query: SearchQuery): Promise<SearchResult<Ingredient>> {
     const cacheKey = `search:ingredients:${this.hashQuery(query)}`;
-    
+
     const cached = await this.cacheService.get(cacheKey);
     if (cached) return JSON.parse(cached);
 
-    const qb = this.ingredientRepository.createQueryBuilder('ingredient')
+    const qb = this.ingredientRepository
+      .createQueryBuilder('ingredient')
       .leftJoinAndSelect('ingredient.categories', 'category');
 
     if (query.text) {
       qb.andWhere(
         '(ingredient.name ILIKE :text OR ingredient.description ILIKE :text OR ' +
-        'category.name ILIKE :text)',
-        { text: `%${query.text}%` }
+          'category.name ILIKE :text)',
+        { text: `%${query.text}%` },
       );
     }
 
@@ -231,8 +243,7 @@ export class SearchService {
         qb.orderBy('ingredient.name', 'ASC');
     }
 
-    qb.skip((query.page - 1) * query.limit)
-      .take(query.limit);
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
 
     const [ingredients, total] = await qb.getManyAndCount();
 
@@ -245,7 +256,7 @@ export class SearchService {
     };
 
     await this.cacheService.set(cacheKey, JSON.stringify(result), 300);
-    
+
     return result;
   }
 
@@ -256,6 +267,7 @@ export class SearchService {
 ```
 
 ##### **2. Search Index Management**
+
 ```typescript
 @Injectable()
 export class SearchIndexService {
@@ -303,6 +315,7 @@ export class SearchIndexService {
 ```
 
 ##### **3. Advanced Search Features**
+
 ```typescript
 @Injectable()
 export class AdvancedSearchService {
@@ -341,6 +354,7 @@ export class AdvancedSearchService {
 #### **Performance Optimizations**
 
 ##### **1. Database Indexing**
+
 ```sql
 -- Full-text search indexes
 CREATE INDEX idx_recipes_search_vector ON recipes USING GIN(search_vector);
@@ -357,6 +371,7 @@ CREATE INDEX idx_ingredients_active ON ingredients(id) WHERE is_active = true;
 ```
 
 ##### **2. Caching Strategy**
+
 ```typescript
 @Injectable()
 export class SearchCacheService {
@@ -389,6 +404,7 @@ export class SearchCacheService {
 ```
 
 #### **Search Analytics**
+
 ```typescript
 @Injectable()
 export class SearchAnalyticsService {
@@ -419,46 +435,46 @@ export class SearchAnalyticsService {
 
 ### **Storage Technologies**
 
-| **Component** | **Technology** | **Version** | **Purpose** |
-|---------------|----------------|-------------|-------------|
-| **Local Storage** | Node.js fs | Built-in | Development and testing |
-| **Cloud Storage** | AWS S3 | Latest | Production file storage |
-| **Alternative Cloud** | Wasabi | Latest | Cost-effective S3-compatible storage |
-| **CDN** | CloudFlare | Latest | Global content delivery |
-| **File Processing** | Sharp | 0.32.x | Image optimization and processing |
+| **Component**         | **Technology** | **Version** | **Purpose**                          |
+| --------------------- | -------------- | ----------- | ------------------------------------ |
+| **Local Storage**     | Node.js fs     | Built-in    | Development and testing              |
+| **Cloud Storage**     | AWS S3         | Latest      | Production file storage              |
+| **Alternative Cloud** | Wasabi         | Latest      | Cost-effective S3-compatible storage |
+| **CDN**               | CloudFlare     | Latest      | Global content delivery              |
+| **File Processing**   | Sharp          | 0.32.x      | Image optimization and processing    |
 
 ### **Frontend Technologies**
 
-| **Component** | **Technology** | **Version** | **Purpose** |
-|---------------|----------------|-------------|-------------|
-| **Framework** | React | 18.x | User interface library |
-| **Language** | TypeScript | 5.x | Type-safe development |
-| **State Management** | Redux Toolkit | 1.9.x | Application state management |
-| **UI Library** | Material-UI | 5.x | Component library |
-| **Mobile** | React Native | 0.72.x | Cross-platform mobile development |
-| **PWA** | Workbox | 7.x | Progressive web app capabilities |
+| **Component**        | **Technology** | **Version** | **Purpose**                       |
+| -------------------- | -------------- | ----------- | --------------------------------- |
+| **Framework**        | React          | 18.x        | User interface library            |
+| **Language**         | TypeScript     | 5.x         | Type-safe development             |
+| **State Management** | Redux Toolkit  | 1.9.x       | Application state management      |
+| **UI Library**       | Material-UI    | 5.x         | Component library                 |
+| **Mobile**           | React Native   | 0.72.x      | Cross-platform mobile development |
+| **PWA**              | Workbox        | 7.x         | Progressive web app capabilities  |
 
 ### **DevOps & Infrastructure**
 
-| **Component** | **Technology** | **Version** | **Purpose** |
-|---------------|----------------|-------------|-------------|
-| **Containerization** | Docker | 24.x | Application containerization |
-| **Orchestration** | Kubernetes | 1.28.x | Container orchestration |
-| **CI/CD** | GitHub Actions | Latest | Automated deployment |
-| **Monitoring** | Prometheus | 2.47.x | Metrics collection |
-| **Visualization** | Grafana | 10.x | Metrics visualization |
-| **Logging** | ELK Stack | 8.x | Centralized logging |
-| **CDN** | CloudFlare | Latest | Content delivery network |
+| **Component**        | **Technology** | **Version** | **Purpose**                  |
+| -------------------- | -------------- | ----------- | ---------------------------- |
+| **Containerization** | Docker         | 24.x        | Application containerization |
+| **Orchestration**    | Kubernetes     | 1.28.x      | Container orchestration      |
+| **CI/CD**            | GitHub Actions | Latest      | Automated deployment         |
+| **Monitoring**       | Prometheus     | 2.47.x      | Metrics collection           |
+| **Visualization**    | Grafana        | 10.x        | Metrics visualization        |
+| **Logging**          | ELK Stack      | 8.x         | Centralized logging          |
+| **CDN**              | CloudFlare     | Latest      | Content delivery network     |
 
 ### **Security & Compliance**
 
-| **Component** | **Technology** | **Version** | **Purpose** |
-|---------------|----------------|-------------|-------------|
-| **Authentication** | JWT | Latest | Stateless authentication |
-| **Encryption** | bcrypt | 5.x | Password hashing |
-| **SSL/TLS** | Let's Encrypt | Latest | Transport layer security |
-| **WAF** | CloudFlare WAF | Latest | Web application firewall |
-| **Vulnerability Scanner** | Snyk | Latest | Security vulnerability scanning |
+| **Component**             | **Technology** | **Version** | **Purpose**                     |
+| ------------------------- | -------------- | ----------- | ------------------------------- |
+| **Authentication**        | JWT            | Latest      | Stateless authentication        |
+| **Encryption**            | bcrypt         | 5.x         | Password hashing                |
+| **SSL/TLS**               | Let's Encrypt  | Latest      | Transport layer security        |
+| **WAF**                   | CloudFlare WAF | Latest      | Web application firewall        |
+| **Vulnerability Scanner** | Snyk           | Latest      | Security vulnerability scanning |
 
 ---
 
@@ -467,6 +483,7 @@ export class SearchAnalyticsService {
 ### **Multi-Environment Storage Strategy**
 
 #### **Development Environment**
+
 ```typescript
 // Local file storage for development
 @Injectable()
@@ -493,6 +510,7 @@ export class LocalStorageService implements StorageService {
 ```
 
 #### **Production Environment - AWS S3**
+
 ```typescript
 // AWS S3 storage service
 @Injectable()
@@ -559,6 +577,7 @@ export class S3StorageService implements StorageService {
 ```
 
 #### **Production Environment - Wasabi**
+
 ```typescript
 // Wasabi S3-compatible storage service
 @Injectable()
@@ -627,6 +646,7 @@ export class WasabiStorageService implements StorageService {
 ```
 
 #### **Storage Service Factory**
+
 ```typescript
 // Storage service factory for environment-based selection
 @Injectable()
@@ -665,6 +685,7 @@ export interface StorageService {
 ### **File Processing & Optimization**
 
 #### **Image Processing Service**
+
 ```typescript
 // Image processing service with optimization
 @Injectable()
@@ -695,10 +716,7 @@ export class ImageProcessingService {
   }
 
   async generateThumbnail(buffer: Buffer, size: number = 300): Promise<Buffer> {
-    return sharp(buffer)
-      .resize(size, size, { fit: 'cover' })
-      .jpeg({ quality: 70 })
-      .toBuffer();
+    return sharp(buffer).resize(size, size, { fit: 'cover' }).jpeg({ quality: 70 }).toBuffer();
   }
 
   async extractMetadata(buffer: Buffer): Promise<ImageMetadata> {
@@ -715,6 +733,7 @@ export class ImageProcessingService {
 ```
 
 #### **File Upload Controller**
+
 ```typescript
 // File upload controller with validation and processing
 @Controller('api/v1/files')
@@ -789,6 +808,7 @@ export class FileUploadController {
 ### **Domain Layer (Core Business Logic)**
 
 #### **Entities**
+
 ```typescript
 // Base entity with common fields
 abstract class BaseEntity {
@@ -838,6 +858,7 @@ export class User extends BaseEntity {
 ```
 
 #### **Domain Services**
+
 ```typescript
 // Recipe domain service with business logic
 @Injectable()
@@ -851,14 +872,16 @@ export class RecipeDomainService {
     // Business rule: Check ingredient availability
     const unavailableIngredients = await this.checkIngredientAvailability(recipeData.ingredients);
     if (unavailableIngredients.length > 0) {
-      throw new BadRequestException(`Unavailable ingredients: ${unavailableIngredients.join(', ')}`);
+      throw new BadRequestException(
+        `Unavailable ingredients: ${unavailableIngredients.join(', ')}`,
+      );
     }
 
     // Create recipe with business validation
     const recipe = this.recipeRepository.create({
       ...recipeData,
       userId,
-      status: RecipeStatus.DRAFT
+      status: RecipeStatus.DRAFT,
     });
 
     return this.recipeRepository.save(recipe);
@@ -883,7 +906,7 @@ export class RecipeDomainService {
 
     recipe.status = RecipeStatus.PUBLISHED;
     recipe.publishedAt = new Date();
-    
+
     return this.recipeRepository.save(recipe);
   }
 }
@@ -892,6 +915,7 @@ export class RecipeDomainService {
 ### **Application Layer (Use Cases)**
 
 #### **Application Services**
+
 ```typescript
 // Recipe application service orchestrating use cases
 @Injectable()
@@ -901,26 +925,26 @@ export class RecipeApplicationService {
     private recipeRepository: RecipeRepository,
     private searchService: SearchService,
     private notificationService: NotificationService,
-    private auditService: AuditService
+    private auditService: AuditService,
   ) {}
 
   async createRecipe(createRecipeDto: CreateRecipeDto, userId: string): Promise<RecipeResponseDto> {
     // Use case: Create new recipe
     const recipe = await this.recipeDomainService.createRecipe(createRecipeDto, userId);
-    
+
     // Use case: Index recipe for search
     await this.searchService.indexRecipe(recipe);
-    
+
     // Use case: Send notification to team members
     await this.notificationService.notifyRecipeCreated(recipe);
-    
+
     // Use case: Audit trail
     await this.auditService.logAction({
       userId,
       action: AuditAction.CREATE,
       resourceType: 'Recipe',
       resourceId: recipe.id,
-      details: { title: recipe.title }
+      details: { title: recipe.title },
     });
 
     return this.mapToResponseDto(recipe);
@@ -929,16 +953,16 @@ export class RecipeApplicationService {
   async searchRecipes(searchDto: SearchRecipesDto, userId: string): Promise<SearchResultDto> {
     // Use case: Validate search permissions
     await this.validateSearchPermissions(userId, searchDto.scope);
-    
+
     // Use case: Execute search with filters
     const results = await this.searchService.searchRecipes(searchDto);
-    
+
     // Use case: Apply user preferences and personalization
     const personalizedResults = await this.applyUserPreferences(results, userId);
-    
+
     // Use case: Track search analytics
     await this.trackSearchAnalytics(searchDto, results, userId);
-    
+
     return this.mapToSearchResultDto(personalizedResults);
   }
 }
@@ -947,6 +971,7 @@ export class RecipeApplicationService {
 ### **Infrastructure Layer (External Concerns)**
 
 #### **Repository Implementation**
+
 ```typescript
 // Recipe repository with database operations
 @Injectable()
@@ -954,7 +979,7 @@ export class RecipeRepositoryImpl implements RecipeRepository {
   constructor(
     @InjectRepository(Recipe)
     private recipeRepository: Repository<Recipe>,
-    private cacheService: CacheService
+    private cacheService: CacheService,
   ) {}
 
   async findById(id: string, userId: string): Promise<Recipe | null> {
@@ -968,7 +993,7 @@ export class RecipeRepositoryImpl implements RecipeRepository {
     // Database query with tenant isolation
     const recipe = await this.recipeRepository.findOne({
       where: { id, userId },
-      relations: ['ingredients', 'steps', 'ratings']
+      relations: ['ingredients', 'steps', 'ratings'],
     });
 
     // Cache result
@@ -980,7 +1005,8 @@ export class RecipeRepositoryImpl implements RecipeRepository {
   }
 
   async searchRecipes(criteria: SearchCriteria): Promise<Recipe[]> {
-    const queryBuilder = this.recipeRepository.createQueryBuilder('recipe')
+    const queryBuilder = this.recipeRepository
+      .createQueryBuilder('recipe')
       .leftJoinAndSelect('recipe.ingredients', 'ingredients')
       .leftJoinAndSelect('recipe.ratings', 'ratings')
       .where('recipe.userId = :userId', { userId: criteria.userId });
@@ -1016,13 +1042,14 @@ export class RecipeRepositoryImpl implements RecipeRepository {
 ### **Authentication & Authorization**
 
 #### **JWT Token System**
+
 ```typescript
 // JWT service with token management
 @Injectable()
 export class JwtService {
   constructor(
     private configService: ConfigService,
-    private redisService: RedisService
+    private redisService: RedisService,
   ) {}
 
   async generateTokens(user: User): Promise<TokenPair> {
@@ -1030,25 +1057,25 @@ export class JwtService {
       sub: user.id,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId
+      tenantId: user.tenantId,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: this.configService.get('JWT_ACCESS_SECRET'),
-        expiresIn: '15m'
+        expiresIn: '15m',
       }),
       this.jwt.signAsync(payload, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: '7d'
-      })
+        expiresIn: '7d',
+      }),
     ]);
 
     // Store refresh token in Redis for revocation
     await this.redisService.set(
       `refresh_token:${user.id}`,
       refreshToken,
-      7 * 24 * 60 * 60 // 7 days
+      7 * 24 * 60 * 60, // 7 days
     );
 
     return { accessToken, refreshToken };
@@ -1057,7 +1084,7 @@ export class JwtService {
   async validateToken(token: string, secret: string): Promise<JwtPayload> {
     try {
       const payload = await this.jwt.verifyAsync(token, { secret });
-      
+
       // Check if token is revoked
       const isRevoked = await this.redisService.get(`revoked_token:${token}`);
       if (isRevoked) {
@@ -1073,20 +1100,21 @@ export class JwtService {
 ```
 
 #### **Role-Based Access Control**
+
 ```typescript
 // RBAC guard with granular permissions
 @Injectable()
 export class RbacGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private userService: UserService
+    private userService: UserService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>(
-      'permissions',
-      [context.getHandler(), context.getClass()]
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<Permission[]>('permissions', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiredPermissions) {
       return true;
@@ -1102,7 +1130,7 @@ export class RbacGuard implements CanActivate {
     // Check user permissions
     const userPermissions = await this.userService.getUserPermissions(user.id);
     const hasAllPermissions = requiredPermissions.every(permission =>
-      userPermissions.includes(permission)
+      userPermissions.includes(permission),
     );
 
     return hasAllPermissions;
@@ -1113,6 +1141,7 @@ export class RbacGuard implements CanActivate {
 ### **Data Protection**
 
 #### **Encryption at Rest**
+
 ```typescript
 // Encryption service for sensitive data
 @Injectable()
@@ -1123,27 +1152,27 @@ export class EncryptionService {
   async encrypt(text: string): Promise<string> {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipher(this.algorithm, this.key);
-    
+
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    
+
     const authTag = cipher.getAuthTag();
-    
+
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
   async decrypt(encryptedText: string): Promise<string> {
     const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
-    
+
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
-    
+
     const decipher = crypto.createDecipher(this.algorithm, this.key);
     decipher.setAuthTag(authTag);
-    
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    
+
     return decrypted;
   }
 }
@@ -1156,6 +1185,7 @@ export class EncryptionService {
 ### **Schema Design**
 
 #### **Core Tables**
+
 ```sql
 -- Users table with tenant isolation
 CREATE TABLE users (
@@ -1218,6 +1248,7 @@ CREATE TABLE ingredients (
 ```
 
 #### **Indexes for Performance**
+
 ```sql
 -- Performance indexes
 CREATE INDEX idx_users_tenant_id ON users(tenant_id);
@@ -1243,6 +1274,7 @@ CREATE INDEX idx_recipes_search ON recipes USING gin(
 ### **Multi-Tenant Architecture**
 
 #### **Tenant Isolation Strategy**
+
 ```typescript
 // Tenant context middleware
 @Injectable()
@@ -1250,7 +1282,7 @@ export class TenantContextMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Extract tenant from subdomain or header
     const tenantId = this.extractTenantId(req);
-    
+
     if (!tenantId) {
       throw new UnauthorizedException('Tenant not identified');
     }
@@ -1298,6 +1330,7 @@ export abstract class TenantAwareRepository<T extends BaseEntity> {
 ### **RESTful API Design**
 
 #### **Resource-Based URLs**
+
 ```typescript
 // Recipe API endpoints
 @Controller('api/v1/recipes')
@@ -1324,7 +1357,7 @@ export class RecipeController {
   @Permissions(Permission.UPDATE_RECIPE)
   async updateRecipe(
     @Param('id') id: string,
-    @Body() updateRecipeDto: UpdateRecipeDto
+    @Body() updateRecipeDto: UpdateRecipeDto,
   ): Promise<RecipeDto> {
     return this.recipeService.updateRecipe(id, updateRecipeDto);
   }
@@ -1339,6 +1372,7 @@ export class RecipeController {
 ```
 
 #### **API Response Standards**
+
 ```typescript
 // Standard API response formats
 export class ApiResponse<T> {
@@ -1391,7 +1425,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       error: message,
       timestamp: new Date().toISOString(),
-      requestId: request.headers['x-request-id'] as string
+      requestId: request.headers['x-request-id'] as string,
     };
 
     response.status(status).json(errorResponse);
@@ -1406,13 +1440,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 ### **Caching Strategy**
 
 #### **Multi-Layer Caching**
+
 ```typescript
 // Cache service with multiple layers
 @Injectable()
 export class CacheService {
   constructor(
     private redisService: RedisService,
-    private memoryCache: MemoryCache
+    private memoryCache: MemoryCache,
   ) {}
 
   async get<T>(key: string): Promise<T | null> {
@@ -1444,13 +1479,14 @@ export class CacheService {
 ### **Database Optimization**
 
 #### **Query Optimization**
+
 ```typescript
 // Optimized repository with query caching
 @Injectable()
 export class OptimizedRecipeRepository {
   async findPopularRecipes(limit: number = 10): Promise<Recipe[]> {
     const cacheKey = `popular_recipes:${limit}`;
-    
+
     // Check cache first
     const cached = await this.cacheService.get<Recipe[]>(cacheKey);
     if (cached) {
@@ -1470,7 +1506,7 @@ export class OptimizedRecipeRepository {
         'recipe.difficulty',
         'AVG(ratings.rating) as avgRating',
         'COUNT(ratings.id) as ratingCount',
-        'COUNT(views.id) as viewCount'
+        'COUNT(views.id) as viewCount',
       ])
       .groupBy('recipe.id')
       .orderBy('viewCount', 'DESC')
@@ -1493,6 +1529,7 @@ export class OptimizedRecipeRepository {
 ### **Application Monitoring**
 
 #### **Metrics Collection**
+
 ```typescript
 // Metrics service with Prometheus integration
 @Injectable()
@@ -1500,18 +1537,18 @@ export class MetricsService {
   private readonly requestCounter = new Counter({
     name: 'http_requests_total',
     help: 'Total number of HTTP requests',
-    labelNames: ['method', 'route', 'status']
+    labelNames: ['method', 'route', 'status'],
   });
 
   private readonly requestDuration = new Histogram({
     name: 'http_request_duration_seconds',
     help: 'HTTP request duration in seconds',
-    labelNames: ['method', 'route']
+    labelNames: ['method', 'route'],
   });
 
   private readonly activeUsers = new Gauge({
     name: 'active_users_total',
-    help: 'Total number of active users'
+    help: 'Total number of active users',
   });
 
   recordRequest(method: string, route: string, status: number, duration: number) {
@@ -1526,6 +1563,7 @@ export class MetricsService {
 ```
 
 #### **Distributed Tracing**
+
 ```typescript
 // Tracing middleware with OpenTelemetry
 @Injectable()
@@ -1537,20 +1575,20 @@ export class TracingMiddleware implements NestMiddleware {
         'http.method': req.method,
         'http.url': req.url,
         'http.user_agent': req.get('User-Agent'),
-        'user.id': req.user?.id
-      }
+        'user.id': req.user?.id,
+      },
     });
 
     // Add trace context to request
     req.traceContext = {
       traceId: span.spanContext().traceId,
-      spanId: span.spanContext().spanId
+      spanId: span.spanContext().spanId,
     };
 
     // End span when request completes
     res.on('finish', () => {
       span.setAttributes({
-        'http.status_code': res.statusCode
+        'http.status_code': res.statusCode,
       });
       span.end();
     });
@@ -1567,6 +1605,7 @@ export class TracingMiddleware implements NestMiddleware {
 ### **Container Orchestration**
 
 #### **Kubernetes Deployment**
+
 ```yaml
 # Deployment configuration
 apiVersion: apps/v1
@@ -1585,45 +1624,46 @@ spec:
         app: hestia-api
     spec:
       containers:
-      - name: hestia-api
-        image: hestia/api:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: hestia-secrets
-              key: database-url
-        - name: STORAGE_PROVIDER
-          valueFrom:
-            secretKeyRef:
-              name: hestia-secrets
-              key: storage-provider
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: hestia-api
+          image: hestia/api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: hestia-secrets
+                  key: database-url
+            - name: STORAGE_PROVIDER
+              valueFrom:
+                secretKeyRef:
+                  name: hestia-secrets
+                  key: storage-provider
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '250m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ```
 
 #### **Service Mesh Configuration**
+
 ```yaml
 # Istio service mesh configuration
 apiVersion: networking.istio.io/v1alpha3
@@ -1632,31 +1672,31 @@ metadata:
   name: hestia-api
 spec:
   hosts:
-  - api.hestia.com
+    - api.hestia.com
   gateways:
-  - hestia-gateway
+    - hestia-gateway
   http:
-  - route:
-    - destination:
-        host: hestia-api
-        port:
-          number: 3000
-      weight: 100
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
-    timeout: 30s
-    corsPolicy:
-      allowOrigins:
-      - exact: https://app.hestia.com
-      allowMethods:
-      - GET
-      - POST
-      - PUT
-      - DELETE
-      allowHeaders:
-      - authorization
-      - content-type
+    - route:
+        - destination:
+            host: hestia-api
+            port:
+              number: 3000
+          weight: 100
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+      timeout: 30s
+      corsPolicy:
+        allowOrigins:
+          - exact: https://app.hestia.com
+        allowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+        allowHeaders:
+          - authorization
+          - content-type
 ```
 
 ---
@@ -1671,7 +1711,7 @@ spec:
 
 ---
 
-*Document Version: 1.0.0*  
-*Last Updated: December 28, 2024*  
-*Status: Technical Design Document*  
-*Next Review: January 28, 2025*
+_Document Version: 1.0.0_  
+_Last Updated: December 28, 2024_  
+_Status: Technical Design Document_  
+_Next Review: January 28, 2025_

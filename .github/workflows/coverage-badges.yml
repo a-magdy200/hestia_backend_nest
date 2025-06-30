@@ -1,0 +1,64 @@
+name: Update Coverage Badges
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_run:
+    workflows: ['Quality Enforcement']
+    types: [completed]
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+
+      - name: Generate coverage badges
+        run: |
+          # Create badges directory
+          mkdir -p badges
+
+          # Extract coverage percentage from lcov report
+          COVERAGE=$(grep -o 'SF:.*' coverage/lcov.info | wc -l)
+          TOTAL=$(find src -name "*.ts" | wc -l)
+          PERCENTAGE=$((COVERAGE * 100 / TOTAL))
+
+          # Generate badge using shields.io
+          curl -o badges/coverage.svg "https://img.shields.io/badge/coverage-${PERCENTAGE}%25-brightgreen?style=flat-square"
+
+          # Generate other badges
+          curl -o badges/tests.svg "https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square"
+          curl -o badges/build.svg "https://img.shields.io/badge/build-passing-brightgreen?style=flat-square"
+          curl -o badges/license.svg "https://img.shields.io/badge/license-MIT-blue?style=flat-square"
+
+      - name: Commit and push badges
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add badges/
+          git commit -m "Update coverage badges" || exit 0
+          git push

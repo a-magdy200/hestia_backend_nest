@@ -2,28 +2,32 @@
 
 ## 📋 Document Information
 
-| **Document Type** | Domain Model & Entity Reference |
-|-------------------|----------------------------------|
-| **Version** | 1.0.0 |
-| **Last Updated** | December 28, 2024 |
-| **Next Review** | January 28, 2025 |
-| **Document Owner** | Domain Architecture Team |
-| **Stakeholders** | Development Team, Business Analysts, Data Architects |
-| **Classification** | Domain Design Document |
+| **Document Type**  | Domain Model & Entity Reference                                    |
+| ------------------ | ------------------------------------------------------------------ |
+| **Version**        | 2.0.0                                                              |
+| **Last Updated**   | December 28, 2024                                                  |
+| **Next Review**    | February 28, 2025                                                  |
+| **Document Owner** | Domain Architecture Team                                           |
+| **Stakeholders**   | Development Team, Business Analysts, Data Architects, Product Team |
+| **Classification** | Domain Design Document                                             |
+| **Status**         | Active - Under Development                                         |
 
 ---
 
 ## 🎯 Executive Summary
 
-This document defines the comprehensive domain model and entity reference for the Hestia Enterprise SaaS Platform. It follows Domain-Driven Design (DDD) principles with clear entity relationships, business rules, and data models that reflect the culinary domain expertise.
+This document defines the comprehensive domain model and entity reference for the Hestia Enterprise SaaS Platform. It follows Domain-Driven Design (DDD) principles with clear entity relationships, business rules, and data models that reflect deep culinary domain expertise and enterprise requirements.
 
 ### **Domain Model Principles**
-1. **Ubiquitous Language**: Consistent terminology across all stakeholders
-2. **Bounded Contexts**: Clear boundaries between different domain areas
-3. **Entity Relationships**: Well-defined associations and dependencies
-4. **Business Rules**: Domain-specific validation and constraints
-5. **Value Objects**: Immutable objects representing domain concepts
-6. **Aggregates**: Transactional boundaries for data consistency
+
+1. **🗣️ Ubiquitous Language**: Consistent terminology across all stakeholders and contexts
+2. **🏗️ Bounded Contexts**: Clear boundaries between different domain areas with explicit integration patterns
+3. **🔗 Rich Entity Relationships**: Well-defined associations, dependencies, and interaction patterns
+4. **📋 Business Rules & Constraints**: Domain-specific validation, constraints, and business logic
+5. **💎 Value Objects**: Immutable objects representing domain concepts with behavior
+6. **🎯 Aggregates**: Transactional boundaries ensuring data consistency and business invariants
+7. **🏢 Enterprise Patterns**: Multi-tenant, scalable, and enterprise-grade domain modeling
+8. **🌍 Global Considerations**: Internationalization, localization, and cultural adaptation support
 
 ---
 
@@ -73,6 +77,7 @@ This document defines the comprehensive domain model and entity reference for th
 ### **User Management Aggregate**
 
 #### **User Entity**
+
 ```typescript
 @Entity('users')
 export class User extends BaseEntity {
@@ -151,6 +156,7 @@ export class User extends BaseEntity {
 ```
 
 #### **Profile Value Object**
+
 ```typescript
 @Entity('profiles')
 export class Profile extends BaseEntity {
@@ -221,6 +227,7 @@ export class Profile extends BaseEntity {
 ```
 
 #### **UserSession Entity**
+
 ```typescript
 @Entity('user_sessions')
 export class UserSession extends BaseEntity {
@@ -282,6 +289,7 @@ export class UserSession extends BaseEntity {
 ### **Tenant Management Aggregate**
 
 #### **Tenant Entity**
+
 ```typescript
 @Entity('tenants')
 export class Tenant extends BaseEntity {
@@ -351,6 +359,7 @@ export class Tenant extends BaseEntity {
 ### **Security Aggregate**
 
 #### **Role Entity**
+
 ```typescript
 @Entity('roles')
 export class Role extends BaseEntity {
@@ -415,6 +424,7 @@ export class Role extends BaseEntity {
 ### **Recipe Management Aggregate**
 
 #### **Recipe Entity**
+
 ```typescript
 @Entity('recipes')
 export class Recipe extends BaseEntity {
@@ -525,7 +535,7 @@ export class Recipe extends BaseEntity {
     if (!this.isRecipeComplete()) {
       throw new Error('Recipe is incomplete and cannot be published');
     }
-    
+
     this.status = RecipeStatus.PUBLISHED;
     this.isPublished = true;
     this.publishedAt = new Date();
@@ -533,8 +543,7 @@ export class Recipe extends BaseEntity {
   }
 
   private isRecipeComplete(): boolean {
-    return this.ingredients && this.ingredients.length > 0 &&
-           this.steps && this.steps.length > 0;
+    return this.ingredients && this.ingredients.length > 0 && this.steps && this.steps.length > 0;
   }
 
   getAverageRating(): number {
@@ -560,6 +569,7 @@ export class Recipe extends BaseEntity {
 ```
 
 #### **RecipeIngredient Entity**
+
 ```typescript
 @Entity('recipe_ingredients')
 export class RecipeIngredient extends BaseEntity {
@@ -618,6 +628,7 @@ export class RecipeIngredient extends BaseEntity {
 ```
 
 #### **RecipeStep Entity**
+
 ```typescript
 @Entity('recipe_steps')
 export class RecipeStep extends BaseEntity {
@@ -675,6 +686,7 @@ export class RecipeStep extends BaseEntity {
 ### **Ingredient Management Aggregate**
 
 #### **Ingredient Entity**
+
 ```typescript
 @Entity('ingredients')
 export class Ingredient extends BaseEntity {
@@ -781,6 +793,7 @@ export class Ingredient extends BaseEntity {
 ### **Item Management Aggregate**
 
 #### **Item Entity**
+
 ```typescript
 @Entity('items')
 export class Item extends BaseEntity {
@@ -911,49 +924,976 @@ export class Item extends BaseEntity {
 
 ---
 
-## 🌐 Localization Domain
+## 🛒 Shopping List Management Domain
 
-### **Translation Management Aggregate**
+### **Shopping List Management Aggregate**
 
-#### **RecipeTranslation Entity**
+#### **ShoppingList Entity**
+
 ```typescript
-@Entity('recipe_translations')
-export class RecipeTranslation extends BaseEntity {
+@Entity('shopping_lists')
+export class ShoppingList extends BaseEntity {
   @Column({ type: 'uuid' })
-  recipeId: string;
-
-  @Column({ type: 'enum', enum: Locale, default: Locale.ENGLISH })
-  locale: Locale;
+  userId: string;
 
   @Column({ length: 255 })
-  title: string;
+  name: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ type: 'text' })
-  instructions: string;
+  @Column({ type: 'enum', enum: ShoppingListStatus, default: ShoppingListStatus.ACTIVE })
+  status: ShoppingListStatus;
+
+  @Column({ type: 'enum', enum: ShoppingListVisibility, default: ShoppingListVisibility.PRIVATE })
+  visibility: ShoppingListVisibility;
+
+  @Column({ type: 'timestamp', nullable: true })
+  plannedDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  completedDate?: Date;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  estimatedBudget: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  actualSpent: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  storePreferences?: StorePreference[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  sharingSettings?: SharingSettings;
+
+  @Column({ length: 255, nullable: true })
+  shareUrl?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  recipeId?: string;
 
   // Relationships
-  @ManyToOne(() => Recipe, recipe => recipe.translations)
+  @ManyToOne(() => User, user => user.shoppingLists)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @OneToMany(() => ShoppingListItem, item => item.shoppingList, { cascade: true })
+  items: ShoppingListItem[];
+
+  @ManyToOne(() => Recipe, recipe => recipe.shoppingLists)
+  @JoinColumn({ name: 'recipeId' })
+  recipe: Recipe;
+
+  @OneToMany(() => ShoppingListCollaborator, collaborator => collaborator.shoppingList)
+  collaborators: ShoppingListCollaborator[];
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateName() {
+    if (!this.name.trim()) {
+      throw new Error('Shopping list name is required');
+    }
+  }
+
+  // Domain Methods
+  addItem(item: ShoppingListItem): void {
+    if (!this.items) {
+      this.items = [];
+    }
+    this.items.push(item);
+    this.updatedAt = new Date();
+  }
+
+  removeItem(itemId: string): void {
+    this.items = this.items.filter(item => item.id !== itemId);
+    this.updatedAt = new Date();
+  }
+
+  markAsCompleted(): void {
+    this.status = ShoppingListStatus.COMPLETED;
+    this.completedDate = new Date();
+    this.updatedAt = new Date();
+  }
+
+  calculateTotalEstimatedCost(): number {
+    return this.items?.reduce((total, item) => total + (item.estimatedCost || 0), 0) || 0;
+  }
+
+  calculateTotalActualCost(): number {
+    return this.items?.reduce((total, item) => total + (item.actualCost || 0), 0) || 0;
+  }
+
+  generateShareUrl(): string {
+    this.shareUrl = `${process.env.APP_URL}/shopping-lists/${this.id}/share/${crypto.randomBytes(16).toString('hex')}`;
+    return this.shareUrl;
+  }
+}
+```
+
+#### **ShoppingListItem Entity**
+
+```typescript
+@Entity('shopping_list_items')
+export class ShoppingListItem extends BaseEntity {
+  @Column({ type: 'uuid' })
+  shoppingListId: string;
+
+  @Column({ length: 255 })
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 1 })
+  quantity: number;
+
+  @Column({ length: 50, nullable: true })
+  unit?: string;
+
+  @Column({ type: 'enum', enum: ItemPriority, default: ItemPriority.MEDIUM })
+  priority: ItemPriority;
+
+  @Column({ type: 'enum', enum: ItemStatus, default: ItemStatus.PENDING })
+  status: ItemStatus;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  estimatedCost?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  actualCost?: number;
+
+  @Column({ length: 100, nullable: true })
+  brand?: string;
+
+  @Column({ length: 100, nullable: true })
+  store?: string;
+
+  @Column({ type: 'text', array: true, default: [] })
+  notes: string[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  substitutions?: string[];
+
+  @Column({ type: 'uuid', nullable: true })
+  ingredientId?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  recipeId?: string;
+
+  // Relationships
+  @ManyToOne(() => ShoppingList, shoppingList => shoppingList.items)
+  @JoinColumn({ name: 'shoppingListId' })
+  shoppingList: ShoppingList;
+
+  @ManyToOne(() => Ingredient, ingredient => ingredient.shoppingListItems)
+  @JoinColumn({ name: 'ingredientId' })
+  ingredient: Ingredient;
+
+  @ManyToOne(() => Recipe, recipe => recipe.shoppingListItems)
   @JoinColumn({ name: 'recipeId' })
   recipe: Recipe;
 
   // Business Rules
   @BeforeInsert()
   @BeforeUpdate()
-  validateTranslation() {
-    if (!this.title.trim()) {
-      throw new Error('Translated title is required');
-    }
-    if (!this.instructions.trim()) {
-      throw new Error('Translated instructions are required');
+  validateQuantity() {
+    if (this.quantity <= 0) {
+      throw new Error('Quantity must be greater than 0');
     }
   }
 
   // Domain Methods
-  getDirection(): string {
-    return this.locale === Locale.ARABIC ? 'rtl' : 'ltr';
+  markAsPurchased(): void {
+    this.status = ItemStatus.PURCHASED;
+    this.updatedAt = new Date();
+  }
+
+  markAsUnavailable(): void {
+    this.status = ItemStatus.UNAVAILABLE;
+    this.updatedAt = new Date();
+  }
+
+  addNote(note: string): void {
+    if (!this.notes) {
+      this.notes = [];
+    }
+    this.notes.push(note);
+    this.updatedAt = new Date();
+  }
+
+  addSubstitution(substitution: string): void {
+    if (!this.substitutions) {
+      this.substitutions = [];
+    }
+    this.substitutions.push(substitution);
+    this.updatedAt = new Date();
+  }
+
+  getFormattedQuantity(): string {
+    return `${this.quantity} ${this.unit || ''}`.trim();
+  }
+}
+```
+
+#### **ShoppingListCollaborator Entity**
+
+```typescript
+@Entity('shopping_list_collaborators')
+export class ShoppingListCollaborator extends BaseEntity {
+  @Column({ type: 'uuid' })
+  shoppingListId: string;
+
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'enum', enum: CollaboratorRole, default: CollaboratorRole.VIEWER })
+  role: CollaboratorRole;
+
+  @Column({ type: 'timestamp', nullable: true })
+  invitedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  acceptedAt?: Date;
+
+  @Column({ default: false })
+  isActive: boolean;
+
+  // Relationships
+  @ManyToOne(() => ShoppingList, shoppingList => shoppingList.collaborators)
+  @JoinColumn({ name: 'shoppingListId' })
+  shoppingList: ShoppingList;
+
+  @ManyToOne(() => User, user => user.shoppingListCollaborations)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateCollaboration() {
+    if (this.shoppingListId && this.userId) {
+      // Prevent duplicate collaborations
+      // This would be handled at the service level
+    }
+  }
+
+  // Domain Methods
+  acceptInvitation(): void {
+    this.acceptedAt = new Date();
+    this.isActive = true;
+    this.updatedAt = new Date();
+  }
+
+  deactivate(): void {
+    this.isActive = false;
+    this.updatedAt = new Date();
+  }
+
+  canEdit(): boolean {
+    return this.role === CollaboratorRole.EDITOR || this.role === CollaboratorRole.OWNER;
+  }
+
+  canDelete(): boolean {
+    return this.role === CollaboratorRole.OWNER;
+  }
+}
+```
+
+---
+
+## 📊 Analytics & Reporting Domain
+
+### **Analytics Aggregate**
+
+#### **AnalyticsEvent Entity**
+
+```typescript
+@Entity('analytics_events')
+export class AnalyticsEvent extends BaseEntity {
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ length: 100 })
+  eventType: string;
+
+  @Column({ length: 100 })
+  eventCategory: string;
+
+  @Column({ type: 'jsonb' })
+  eventData: Record<string, any>;
+
+  @Column({ length: 45, nullable: true })
+  ipAddress?: string;
+
+  @Column({ length: 500, nullable: true })
+  userAgent?: string;
+
+  @Column({ length: 100, nullable: true })
+  sessionId?: string;
+
+  @Column({ type: 'timestamp' })
+  occurredAt: Date;
+
+  // Relationships
+  @ManyToOne(() => User, user => user.analyticsEvents)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(() => Tenant, tenant => tenant.analyticsEvents)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateEventData() {
+    if (!this.eventType || !this.eventCategory) {
+      throw new Error('Event type and category are required');
+    }
+  }
+
+  // Domain Methods
+  getEventSummary(): string {
+    return `${this.eventCategory}:${this.eventType}`;
+  }
+
+  isUserEvent(): boolean {
+    return this.eventCategory === 'user';
+  }
+
+  isRecipeEvent(): boolean {
+    return this.eventCategory === 'recipe';
+  }
+
+  isIngredientEvent(): boolean {
+    return this.eventCategory === 'ingredient';
+  }
+}
+```
+
+#### **AnalyticsMetric Entity**
+
+```typescript
+@Entity('analytics_metrics')
+export class AnalyticsMetric extends BaseEntity {
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ length: 100 })
+  metricName: string;
+
+  @Column({ length: 100 })
+  metricCategory: string;
+
+  @Column({ type: 'decimal', precision: 15, scale: 4 })
+  value: number;
+
+  @Column({ length: 50, nullable: true })
+  unit?: string;
+
+  @Column({ type: 'date' })
+  date: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  dimensions?: Record<string, any>;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  // Relationships
+  @ManyToOne(() => Tenant, tenant => tenant.analyticsMetrics)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateMetric() {
+    if (!this.metricName || !this.metricCategory) {
+      throw new Error('Metric name and category are required');
+    }
+  }
+
+  // Domain Methods
+  getMetricKey(): string {
+    return `${this.metricCategory}:${this.metricName}`;
+  }
+
+  isGlobalMetric(): boolean {
+    return !this.tenantId;
+  }
+
+  isTenantMetric(): boolean {
+    return !!this.tenantId;
+  }
+}
+```
+
+---
+
+## 🔔 Notification & Communication Domain
+
+### **Notification Aggregate**
+
+#### **Notification Entity**
+
+```typescript
+@Entity('notifications')
+export class Notification extends BaseEntity {
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ length: 255 })
+  title: string;
+
+  @Column({ type: 'text' })
+  message: string;
+
+  @Column({ type: 'enum', enum: NotificationType, default: NotificationType.INFO })
+  type: NotificationType;
+
+  @Column({ type: 'enum', enum: NotificationPriority, default: NotificationPriority.NORMAL })
+  priority: NotificationPriority;
+
+  @Column({ type: 'enum', enum: NotificationStatus, default: NotificationStatus.PENDING })
+  status: NotificationStatus;
+
+  @Column({ type: 'enum', enum: NotificationChannel, default: NotificationChannel.IN_APP })
+  channel: NotificationChannel;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  @Column({ type: 'timestamp', nullable: true })
+  scheduledAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  sentAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  readAt?: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  deliveryAttempts?: DeliveryAttempt[];
+
+  // Relationships
+  @ManyToOne(() => User, user => user.notifications)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(() => Tenant, tenant => tenant.notifications)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateNotification() {
+    if (!this.title.trim() || !this.message.trim()) {
+      throw new Error('Notification title and message are required');
+    }
+  }
+
+  // Domain Methods
+  markAsRead(): void {
+    this.status = NotificationStatus.READ;
+    this.readAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  markAsSent(): void {
+    this.status = NotificationStatus.SENT;
+    this.sentAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  markAsFailed(): void {
+    this.status = NotificationStatus.FAILED;
+    this.updatedAt = new Date();
+  }
+
+  addDeliveryAttempt(attempt: DeliveryAttempt): void {
+    if (!this.deliveryAttempts) {
+      this.deliveryAttempts = [];
+    }
+    this.deliveryAttempts.push(attempt);
+    this.updatedAt = new Date();
+  }
+
+  isUrgent(): boolean {
+    return (
+      this.priority === NotificationPriority.HIGH || this.priority === NotificationPriority.CRITICAL
+    );
+  }
+
+  canRetry(): boolean {
+    return (
+      this.status === NotificationStatus.FAILED &&
+      (!this.deliveryAttempts || this.deliveryAttempts.length < 3)
+    );
+  }
+}
+```
+
+#### **NotificationTemplate Entity**
+
+```typescript
+@Entity('notification_templates')
+export class NotificationTemplate extends BaseEntity {
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ length: 100 })
+  name: string;
+
+  @Column({ length: 100 })
+  code: string;
+
+  @Column({ type: 'enum', enum: NotificationType, default: NotificationType.INFO })
+  type: NotificationType;
+
+  @Column({ type: 'enum', enum: NotificationChannel, default: NotificationChannel.IN_APP })
+  channel: NotificationChannel;
+
+  @Column({ length: 255 })
+  subject: string;
+
+  @Column({ type: 'text' })
+  body: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  variables?: string[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ default: false })
+  isSystem: boolean;
+
+  // Relationships
+  @ManyToOne(() => Tenant, tenant => tenant.notificationTemplates)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateTemplate() {
+    if (!this.name.trim() || !this.code.trim() || !this.subject.trim() || !this.body.trim()) {
+      throw new Error('Template name, code, subject, and body are required');
+    }
+  }
+
+  // Domain Methods
+  render(variables: Record<string, any>): { subject: string; body: string } {
+    let subject = this.subject;
+    let body = this.body;
+
+    for (const [key, value] of Object.entries(variables)) {
+      const placeholder = `{{${key}}}`;
+      subject = subject.replace(new RegExp(placeholder, 'g'), String(value));
+      body = body.replace(new RegExp(placeholder, 'g'), String(value));
+    }
+
+    return { subject, body };
+  }
+
+  getRequiredVariables(): string[] {
+    return this.variables || [];
+  }
+
+  isGlobalTemplate(): boolean {
+    return !this.tenantId;
+  }
+
+  isTenantTemplate(): boolean {
+    return !!this.tenantId;
+  }
+}
+```
+
+---
+
+## 💰 Billing & Subscription Domain
+
+### **Subscription Aggregate**
+
+#### **Subscription Entity**
+
+```typescript
+@Entity('subscriptions')
+export class Subscription extends BaseEntity {
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ length: 100 })
+  planId: string;
+
+  @Column({ length: 100 })
+  planName: string;
+
+  @Column({ type: 'enum', enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
+  status: SubscriptionStatus;
+
+  @Column({ type: 'enum', enum: BillingCycle, default: BillingCycle.MONTHLY })
+  billingCycle: BillingCycle;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  amount: number;
+
+  @Column({ length: 3, default: 'USD' })
+  currency: string;
+
+  @Column({ type: 'timestamp' })
+  startDate: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  endDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  trialEndDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  nextBillingDate?: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  features: Record<string, any>;
+
+  @Column({ type: 'jsonb', nullable: true })
+  limits: Record<string, any>;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  // Relationships
+  @ManyToOne(() => User, user => user.subscriptions)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(() => Tenant, tenant => tenant.subscriptions)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  @OneToMany(() => Invoice, invoice => invoice.subscription)
+  invoices: Invoice[];
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateSubscription() {
+    if (this.amount < 0) {
+      throw new Error('Subscription amount cannot be negative');
+    }
+  }
+
+  // Domain Methods
+  isActive(): boolean {
+    return this.status === SubscriptionStatus.ACTIVE;
+  }
+
+  isTrial(): boolean {
+    return this.trialEndDate ? new Date() < this.trialEndDate : false;
+  }
+
+  isExpired(): boolean {
+    return this.endDate ? new Date() > this.endDate : false;
+  }
+
+  cancel(): void {
+    this.status = SubscriptionStatus.CANCELLED;
+    this.endDate = new Date();
+    this.updatedAt = new Date();
+  }
+
+  pause(): void {
+    this.status = SubscriptionStatus.PAUSED;
+    this.updatedAt = new Date();
+  }
+
+  resume(): void {
+    this.status = SubscriptionStatus.ACTIVE;
+    this.updatedAt = new Date();
+  }
+
+  canAccessFeature(feature: string): boolean {
+    return this.features?.[feature] === true;
+  }
+
+  getUsageLimit(resource: string): number {
+    return this.limits?.[resource] || 0;
+  }
+}
+```
+
+#### **Invoice Entity**
+
+```typescript
+@Entity('invoices')
+export class Invoice extends BaseEntity {
+  @Column({ type: 'uuid' })
+  subscriptionId: string;
+
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ length: 100 })
+  invoiceNumber: string;
+
+  @Column({ type: 'enum', enum: InvoiceStatus, default: InvoiceStatus.DRAFT })
+  status: InvoiceStatus;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  subtotal: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  tax: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  discount: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  total: number;
+
+  @Column({ length: 3, default: 'USD' })
+  currency: string;
+
+  @Column({ type: 'timestamp' })
+  dueDate: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  paidAt?: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  items: InvoiceItem[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  // Relationships
+  @ManyToOne(() => Subscription, subscription => subscription.invoices)
+  @JoinColumn({ name: 'subscriptionId' })
+  subscription: Subscription;
+
+  @ManyToOne(() => User, user => user.invoices)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateInvoice() {
+    if (this.total < 0) {
+      throw new Error('Invoice total cannot be negative');
+    }
+  }
+
+  // Domain Methods
+  markAsPaid(): void {
+    this.status = InvoiceStatus.PAID;
+    this.paidAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  markAsOverdue(): void {
+    this.status = InvoiceStatus.OVERDUE;
+    this.updatedAt = new Date();
+  }
+
+  isOverdue(): boolean {
+    return this.dueDate < new Date() && this.status !== InvoiceStatus.PAID;
+  }
+
+  calculateTotal(): number {
+    return this.subtotal + this.tax - this.discount;
+  }
+
+  addItem(item: InvoiceItem): void {
+    if (!this.items) {
+      this.items = [];
+    }
+    this.items.push(item);
+    this.recalculateTotals();
+  }
+
+  private recalculateTotals(): void {
+    this.subtotal = this.items?.reduce((sum, item) => sum + item.amount, 0) || 0;
+    this.total = this.calculateTotal();
+    this.updatedAt = new Date();
+  }
+}
+```
+
+---
+
+## 🤖 AI & Machine Learning Domain
+
+### **AI Model Aggregate**
+
+#### **AIModel Entity**
+
+```typescript
+@Entity('ai_models')
+export class AIModel extends BaseEntity {
+  @Column({ length: 100 })
+  name: string;
+
+  @Column({ length: 100 })
+  version: string;
+
+  @Column({ type: 'enum', enum: AIModelType, default: AIModelType.RECIPE_GENERATION })
+  type: AIModelType;
+
+  @Column({ type: 'enum', enum: AIModelStatus, default: AIModelStatus.ACTIVE })
+  status: AIModelStatus;
+
+  @Column({ type: 'text' })
+  description: string;
+
+  @Column({ type: 'jsonb' })
+  configuration: AIModelConfig;
+
+  @Column({ type: 'jsonb', nullable: true })
+  performance: AIModelPerformance;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastTrainingDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastDeploymentDate?: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  // Relationships
+  @OneToMany(() => AIModelUsage, usage => usage.model)
+  usages: AIModelUsage[];
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateModel() {
+    if (!this.name.trim() || !this.version.trim()) {
+      throw new Error('Model name and version are required');
+    }
+  }
+
+  // Domain Methods
+  isActive(): boolean {
+    return this.status === AIModelStatus.ACTIVE;
+  }
+
+  canGenerate(): boolean {
+    return this.isActive() && this.type === AIModelType.RECIPE_GENERATION;
+  }
+
+  updatePerformance(performance: Partial<AIModelPerformance>): void {
+    this.performance = { ...this.performance, ...performance };
+    this.updatedAt = new Date();
+  }
+
+  deploy(): void {
+    this.status = AIModelStatus.ACTIVE;
+    this.lastDeploymentDate = new Date();
+    this.updatedAt = new Date();
+  }
+
+  retire(): void {
+    this.status = AIModelStatus.RETIRED;
+    this.updatedAt = new Date();
+  }
+}
+```
+
+#### **AIModelUsage Entity**
+
+```typescript
+@Entity('ai_model_usages')
+export class AIModelUsage extends BaseEntity {
+  @Column({ type: 'uuid' })
+  modelId: string;
+
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  tenantId?: string;
+
+  @Column({ type: 'enum', enum: AIUsageType, default: AIUsageType.RECIPE_GENERATION })
+  usageType: AIUsageType;
+
+  @Column({ type: 'jsonb' })
+  request: Record<string, any>;
+
+  @Column({ type: 'jsonb', nullable: true })
+  response?: Record<string, any>;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  confidence?: number;
+
+  @Column({ type: 'integer', nullable: true })
+  responseTime?: number;
+
+  @Column({ type: 'enum', enum: AIUsageStatus, default: AIUsageStatus.SUCCESS })
+  status: AIUsageStatus;
+
+  @Column({ type: 'text', nullable: true })
+  errorMessage?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
+
+  // Relationships
+  @ManyToOne(() => AIModel, model => model.usages)
+  @JoinColumn({ name: 'modelId' })
+  model: AIModel;
+
+  @ManyToOne(() => User, user => user.aiUsages)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @ManyToOne(() => Tenant, tenant => tenant.aiUsages)
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
+
+  // Business Rules
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateUsage() {
+    if (!this.modelId || !this.userId) {
+      throw new Error('Model ID and User ID are required');
+    }
+  }
+
+  // Domain Methods
+  isSuccessful(): boolean {
+    return this.status === AIUsageStatus.SUCCESS;
+  }
+
+  isHighConfidence(): boolean {
+    return this.confidence ? this.confidence >= 0.8 : false;
+  }
+
+  isFastResponse(): boolean {
+    return this.responseTime ? this.responseTime < 5000 : false; // 5 seconds
+  }
+
+  markAsFailed(error: string): void {
+    this.status = AIUsageStatus.FAILED;
+    this.errorMessage = error;
+    this.updatedAt = new Date();
   }
 }
 ```
@@ -997,25 +1937,26 @@ erDiagram
 
 ### **Relationship Cardinalities**
 
-| **Relationship** | **Type** | **Cardinality** | **Description** |
-|------------------|----------|-----------------|-----------------|
-| User → Recipe | One-to-Many | 1:N | User can create multiple recipes |
-| User → Item | One-to-Many | 1:N | User can own multiple items |
-| User → Profile | One-to-One | 1:1 | User has exactly one profile |
-| User → UserSession | One-to-Many | 1:N | User can have multiple active sessions |
-| User → Role | Many-to-One | N:1 | Multiple users can have the same role |
-| User → Tenant | Many-to-One | N:1 | Multiple users belong to the same tenant |
-| Recipe → RecipeIngredient | One-to-Many | 1:N | Recipe contains multiple ingredients |
-| Recipe → RecipeStep | One-to-Many | 1:N | Recipe has multiple steps |
-| Recipe → RecipeRating | One-to-Many | 1:N | Recipe can receive multiple ratings |
-| Ingredient → RecipeIngredient | One-to-Many | 1:N | Ingredient can be used in multiple recipes |
-| Ingredient → IngredientCategory | Many-to-One | N:1 | Multiple ingredients can belong to the same category |
+| **Relationship**                | **Type**    | **Cardinality** | **Description**                                      |
+| ------------------------------- | ----------- | --------------- | ---------------------------------------------------- |
+| User → Recipe                   | One-to-Many | 1:N             | User can create multiple recipes                     |
+| User → Item                     | One-to-Many | 1:N             | User can own multiple items                          |
+| User → Profile                  | One-to-One  | 1:1             | User has exactly one profile                         |
+| User → UserSession              | One-to-Many | 1:N             | User can have multiple active sessions               |
+| User → Role                     | Many-to-One | N:1             | Multiple users can have the same role                |
+| User → Tenant                   | Many-to-One | N:1             | Multiple users belong to the same tenant             |
+| Recipe → RecipeIngredient       | One-to-Many | 1:N             | Recipe contains multiple ingredients                 |
+| Recipe → RecipeStep             | One-to-Many | 1:N             | Recipe has multiple steps                            |
+| Recipe → RecipeRating           | One-to-Many | 1:N             | Recipe can receive multiple ratings                  |
+| Ingredient → RecipeIngredient   | One-to-Many | 1:N             | Ingredient can be used in multiple recipes           |
+| Ingredient → IngredientCategory | Many-to-One | N:1             | Multiple ingredients can belong to the same category |
 
 ---
 
 ## 🔒 Business Rules & Constraints
 
 ### **User Management Rules**
+
 - Email addresses must be unique within a tenant
 - Passwords must be properly hashed using bcrypt
 - Users must belong to exactly one tenant
@@ -1023,6 +1964,7 @@ erDiagram
 - Email verification is required for certain operations
 
 ### **Recipe Management Rules**
+
 - Recipe titles must be unique within a user's recipes
 - Published recipes must have at least one ingredient and step
 - Recipe difficulty must be appropriate for user permissions
@@ -1030,18 +1972,21 @@ erDiagram
 - Recipe comments must not exceed 1000 characters
 
 ### **Ingredient Management Rules**
+
 - Ingredient names must be unique within the global database
 - Nutritional information must be validated for accuracy
 - Allergen information must be comprehensive and accurate
 - Ingredient substitutions must be practical and safe
 
 ### **Item Management Rules**
+
 - Item names must be unique within a user's inventory
 - Purchase prices cannot be negative
 - Current values must be reasonable estimates
 - Maintenance schedules must be realistic
 
 ### **Localization Rules**
+
 - Translations must maintain the original meaning
 - RTL languages must be properly formatted
 - Fallback translations must be available
@@ -1052,6 +1997,7 @@ erDiagram
 ## 📋 Data Validation
 
 ### **Input Validation**
+
 ```typescript
 // Validation decorators for entities
 export class CreateRecipeDto {
@@ -1100,11 +2046,15 @@ export class CreateRecipeDto {
 ```
 
 ### **Business Logic Validation**
+
 ```typescript
 // Domain service validation
 @Injectable()
 export class RecipeValidationService {
-  async validateRecipeCreation(recipeData: CreateRecipeDto, userId: string): Promise<ValidationResult> {
+  async validateRecipeCreation(
+    recipeData: CreateRecipeDto,
+    userId: string,
+  ): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // Check user permissions
@@ -1137,7 +2087,7 @@ export class RecipeValidationService {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -1154,7 +2104,7 @@ export class RecipeValidationService {
 
 ---
 
-*Document Version: 1.0.0*  
-*Last Updated: December 28, 2024*  
-*Status: Domain Design Document*  
-*Next Review: January 28, 2025* 
+_Document Version: 1.0.0_  
+_Last Updated: December 28, 2024_  
+_Status: Domain Design Document_  
+_Next Review: January 28, 2025_

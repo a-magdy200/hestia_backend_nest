@@ -2,27 +2,32 @@
 
 ## 📋 Document Information
 
-| **Document Type** | Localization & Internationalization |
-|-------------------|-------------------------------------|
-| **Version** | 1.0.0 |
-| **Last Updated** | December 28, 2024 |
-| **Next Review** | January 28, 2025 |
-| **Document Owner** | Localization Team |
-| **Stakeholders** | Development Team, UX/UI Team, Content Team, Global Customers |
-| **Classification** | Localization & i18n Document |
+| **Document Type**  | Localization & Internationalization                                                |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| **Version**        | 2.0.0                                                                              |
+| **Last Updated**   | December 28, 2024                                                                  |
+| **Next Review**    | February 28, 2025                                                                  |
+| **Document Owner** | Localization Team                                                                  |
+| **Stakeholders**   | Development Team, UX/UI Team, Content Team, Global Customers, Translation Partners |
+| **Classification** | Localization & i18n Document                                                       |
+| **Status**         | Active - Under Development                                                         |
 
 ---
 
 ## 🎯 Executive Summary
 
-This document defines the comprehensive localization and internationalization strategy for the Hestia Enterprise SaaS Platform. It ensures seamless multi-language support, cultural adaptation, and global accessibility for enterprise customers worldwide.
+This document defines the comprehensive localization and internationalization strategy for the Hestia Enterprise SaaS Platform. It ensures seamless multi-language support, cultural adaptation, and global accessibility for enterprise customers worldwide while maintaining consistency and quality across all locales.
 
-### **Localization Strategy**
-- **Multi-Language Support**: English and Arabic with expandable framework
-- **Cultural Adaptation**: Regional preferences and formatting
-- **Translation Management**: Complete translation workflow
-- **RTL/LTR Support**: Full bidirectional text support
-- **Enterprise Scale**: Scalable translation management
+### **Comprehensive Localization Strategy**
+
+- **🌍 Multi-Language Support**: English and Arabic with expandable framework for 8+ additional languages
+- **🎨 Cultural Adaptation**: Regional preferences, formatting, and cultural considerations
+- **🔄 Translation Management**: Complete translation workflow with automation and quality assurance
+- **📝 RTL/LTR Support**: Full bidirectional text support with layout adaptation
+- **🏢 Enterprise Scale**: Scalable translation management with tenant-specific customizations
+- **⚡ Dynamic Localization**: Real-time language switching and content adaptation
+- **🤖 AI-Powered Translation**: Machine learning for translation assistance and quality improvement
+- **📊 Localization Analytics**: Comprehensive metrics and insights for localization effectiveness
 
 ---
 
@@ -30,22 +35,22 @@ This document defines the comprehensive localization and internationalization st
 
 ### **Current Language Support**
 
-| **Language** | **Code** | **Direction** | **Status** | **Coverage** |
-|--------------|----------|---------------|------------|--------------|
-| **English** | `en` | LTR | ✅ Complete | 100% |
-| **Arabic** | `ar` | RTL | ✅ Complete | 100% |
+| **Language** | **Code** | **Direction** | **Status**  | **Coverage** |
+| ------------ | -------- | ------------- | ----------- | ------------ |
+| **English**  | `en`     | LTR           | ✅ Complete | 100%         |
+| **Arabic**   | `ar`     | RTL           | ✅ Complete | 100%         |
 
 ### **Future Language Roadmap**
 
-| **Language** | **Code** | **Direction** | **Planned** | **Priority** |
-|--------------|----------|---------------|-------------|--------------|
-| **Spanish** | `es` | LTR | Q2 2025 | High |
-| **French** | `fr` | LTR | Q3 2025 | High |
-| **German** | `de` | LTR | Q4 2025 | Medium |
-| **Chinese (Simplified)** | `zh-CN` | LTR | Q1 2026 | Medium |
-| **Japanese** | `ja` | LTR | Q2 2026 | Medium |
-| **Hindi** | `hi` | LTR | Q3 2026 | Low |
-| **Portuguese** | `pt` | LTR | Q4 2026 | Low |
+| **Language**             | **Code** | **Direction** | **Planned** | **Priority** |
+| ------------------------ | -------- | ------------- | ----------- | ------------ |
+| **Spanish**              | `es`     | LTR           | Q2 2025     | High         |
+| **French**               | `fr`     | LTR           | Q3 2025     | High         |
+| **German**               | `de`     | LTR           | Q4 2025     | Medium       |
+| **Chinese (Simplified)** | `zh-CN`  | LTR           | Q1 2026     | Medium       |
+| **Japanese**             | `ja`     | LTR           | Q2 2026     | Medium       |
+| **Hindi**                | `hi`     | LTR           | Q3 2026     | Low          |
+| **Portuguese**           | `pt`     | LTR           | Q4 2026     | Low          |
 
 ---
 
@@ -100,6 +105,7 @@ This document defines the comprehensive localization and internationalization st
 ### **Locale Management**
 
 #### **Locale Configuration**
+
 ```typescript
 // Locale configuration
 export interface LocaleConfig {
@@ -129,9 +135,9 @@ export const SUPPORTED_LOCALES: Record<string, LocaleConfig> = {
     numberFormat: {
       decimal: '.',
       thousands: ',',
-      currency: '$'
+      currency: '$',
     },
-    fallback: 'en'
+    fallback: 'en',
   },
   ar: {
     code: 'ar',
@@ -143,10 +149,10 @@ export const SUPPORTED_LOCALES: Record<string, LocaleConfig> = {
     numberFormat: {
       decimal: ',',
       thousands: '.',
-      currency: 'د.ك'
+      currency: 'د.ك',
     },
-    fallback: 'en'
-  }
+    fallback: 'en',
+  },
 };
 
 // Locale validation
@@ -164,13 +170,14 @@ export function getLocaleConfig(locale: string): LocaleConfig {
 ```
 
 #### **Locale Detection Service**
+
 ```typescript
 // Locale detection service
 @Injectable()
 export class LocaleDetectionService {
   async detectUserLocale(request: Request): Promise<string> {
     // Priority order: User preference > Accept-Language > Default
-    
+
     // 1. Check user preference from database
     if (request.user) {
       const userLocale = await this.getUserLocale(request.user.id);
@@ -178,7 +185,7 @@ export class LocaleDetectionService {
         return userLocale;
       }
     }
-    
+
     // 2. Check Accept-Language header
     const acceptLanguage = request.headers['accept-language'];
     if (acceptLanguage) {
@@ -187,13 +194,13 @@ export class LocaleDetectionService {
         return detectedLocale;
       }
     }
-    
+
     // 3. Check IP-based geolocation
     const geoLocale = await this.detectLocaleByIP(request.ip);
     if (geoLocale && isValidLocale(geoLocale)) {
       return geoLocale;
     }
-    
+
     // 4. Default fallback
     return 'en';
   }
@@ -203,14 +210,14 @@ export class LocaleDetectionService {
       .split(',')
       .map(lang => lang.split(';')[0].trim())
       .filter(lang => lang.length > 0);
-    
+
     for (const lang of languages) {
       const locale = lang.split('-')[0]; // Extract primary language
       if (isValidLocale(locale)) {
         return locale;
       }
     }
-    
+
     return null;
   }
 
@@ -229,20 +236,17 @@ export class LocaleDetectionService {
 ### **Translation Management**
 
 #### **Translation Service**
+
 ```typescript
 // Translation service
 @Injectable()
 export class TranslationService {
   constructor(
     private translationRepository: TranslationRepository,
-    private cacheService: CacheService
+    private cacheService: CacheService,
   ) {}
 
-  async translate(
-    key: string,
-    locale: string,
-    context?: TranslationContext
-  ): Promise<string> {
+  async translate(key: string, locale: string, context?: TranslationContext): Promise<string> {
     // Check cache first
     const cacheKey = `translation:${key}:${locale}`;
     const cached = await this.cacheService.get<string>(cacheKey);
@@ -252,7 +256,7 @@ export class TranslationService {
 
     // Get translation from database
     const translation = await this.translationRepository.findByKeyAndLocale(key, locale);
-    
+
     if (translation) {
       // Cache the translation
       await this.cacheService.set(cacheKey, translation.value, 3600);
@@ -270,24 +274,21 @@ export class TranslationService {
   }
 
   async translateRecipe(recipe: Recipe, locale: string): Promise<LocalizedRecipe> {
-    const translation = await this.translationRepository.findRecipeTranslation(
-      recipe.id,
-      locale
-    );
+    const translation = await this.translationRepository.findRecipeTranslation(recipe.id, locale);
 
     return {
       ...recipe,
       title: translation?.title || recipe.title,
       description: translation?.description || recipe.description,
       instructions: translation?.instructions || recipe.instructions,
-      translation: translation
+      translation: translation,
     };
   }
 
   async translateIngredient(ingredient: Ingredient, locale: string): Promise<LocalizedIngredient> {
     const translation = await this.translationRepository.findIngredientTranslation(
       ingredient.id,
-      locale
+      locale,
     );
 
     return {
@@ -296,7 +297,7 @@ export class TranslationService {
       description: translation?.description || ingredient.description,
       storageInstructions: translation?.storageInstructions || ingredient.storageInstructions,
       substitutions: translation?.substitutions || ingredient.substitutions,
-      translation: translation
+      translation: translation,
     };
   }
 
@@ -313,25 +314,29 @@ export class TranslationService {
 ```
 
 #### **Translation Repository**
+
 ```typescript
 // Translation repository
 @Injectable()
 export class TranslationRepositoryImpl implements TranslationRepository {
   async findByKeyAndLocale(key: string, locale: string): Promise<Translation | null> {
     return await this.translationRepository.findOne({
-      where: { key, locale }
+      where: { key, locale },
     });
   }
 
   async findRecipeTranslation(recipeId: string, locale: string): Promise<RecipeTranslation | null> {
     return await this.recipeTranslationRepository.findOne({
-      where: { recipeId, locale }
+      where: { recipeId, locale },
     });
   }
 
-  async findIngredientTranslation(ingredientId: string, locale: string): Promise<IngredientTranslation | null> {
+  async findIngredientTranslation(
+    ingredientId: string,
+    locale: string,
+  ): Promise<IngredientTranslation | null> {
     return await this.ingredientTranslationRepository.findOne({
-      where: { ingredientId, locale }
+      where: { ingredientId, locale },
     });
   }
 
@@ -358,13 +363,14 @@ export class TranslationRepositoryImpl implements TranslationRepository {
 ### **Date and Time Formatting**
 
 #### **Date/Time Service**
+
 ```typescript
 // Date/time formatting service
 @Injectable()
 export class DateTimeService {
   formatDate(date: Date, locale: string): string {
     const config = getLocaleConfig(locale);
-    
+
     switch (config.dateFormat) {
       case 'MM/DD/YYYY':
         return date.toLocaleDateString('en-US');
@@ -377,19 +383,19 @@ export class DateTimeService {
 
   formatTime(time: Date, locale: string): string {
     const config = getLocaleConfig(locale);
-    
+
     switch (config.timeFormat) {
       case 'HH:mm':
         return time.toLocaleTimeString(locale, {
           hour: '2-digit',
           minute: '2-digit',
-          hour12: false
+          hour12: false,
         });
       case 'hh:mm A':
         return time.toLocaleTimeString(locale, {
           hour: '2-digit',
           minute: '2-digit',
-          hour12: true
+          hour12: true,
         });
       default:
         return time.toLocaleTimeString(locale);
@@ -407,25 +413,26 @@ export class DateTimeService {
 ### **Number and Currency Formatting**
 
 #### **Number Formatting Service**
+
 ```typescript
 // Number formatting service
 @Injectable()
 export class NumberFormatService {
   formatNumber(number: number, locale: string): string {
     const config = getLocaleConfig(locale);
-    
+
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(number);
   }
 
   formatCurrency(amount: number, locale: string, currency: string = 'USD'): string {
     const config = getLocaleConfig(locale);
-    
+
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency
+      currency: currency,
     }).format(amount);
   }
 
@@ -433,7 +440,7 @@ export class NumberFormatService {
     return new Intl.NumberFormat(locale, {
       style: 'percent',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(value / 100);
   }
 }
@@ -442,6 +449,7 @@ export class NumberFormatService {
 ### **Text Direction Support**
 
 #### **RTL/LTR Support**
+
 ```typescript
 // Text direction service
 @Injectable()
@@ -474,17 +482,16 @@ export class TextDirectionService {
 ### **Translation Management System**
 
 #### **Translation Workflow**
+
 ```typescript
 // Translation workflow service
 @Injectable()
 export class TranslationWorkflowService {
-  async createTranslationRequest(
-    content: TranslationRequest
-  ): Promise<TranslationRequest> {
+  async createTranslationRequest(content: TranslationRequest): Promise<TranslationRequest> {
     const request = await this.translationRequestRepository.create({
       ...content,
       status: TranslationStatus.PENDING,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     // Notify translation team
@@ -496,16 +503,16 @@ export class TranslationWorkflowService {
   async processTranslationRequest(
     requestId: string,
     translation: string,
-    translatorId: string
+    translatorId: string,
   ): Promise<void> {
     const request = await this.translationRequestRepository.findById(requestId);
-    
+
     // Update request status
     await this.translationRequestRepository.update(requestId, {
       status: TranslationStatus.TRANSLATED,
       translatedText: translation,
       translatorId,
-      translatedAt: new Date()
+      translatedAt: new Date(),
     });
 
     // Create translation record
@@ -513,7 +520,7 @@ export class TranslationWorkflowService {
       key: request.key,
       locale: request.targetLocale,
       value: translation,
-      context: request.context
+      context: request.context,
     });
 
     // Clear cache
@@ -527,15 +534,15 @@ export class TranslationWorkflowService {
     translationId: string,
     approved: boolean,
     reviewerId: string,
-    comments?: string
+    comments?: string,
   ): Promise<void> {
     const translation = await this.translationRepository.findById(translationId);
-    
+
     await this.translationRepository.update(translationId, {
       status: approved ? TranslationStatus.APPROVED : TranslationStatus.REJECTED,
       reviewerId,
       reviewedAt: new Date(),
-      reviewComments: comments
+      reviewComments: comments,
     });
 
     if (approved) {
@@ -549,6 +556,7 @@ export class TranslationWorkflowService {
 ### **Translation Quality Assurance**
 
 #### **Quality Control Service**
+
 ```typescript
 // Translation quality control
 @Injectable()
@@ -556,27 +564,27 @@ export class TranslationQualityService {
   async validateTranslation(
     original: string,
     translation: string,
-    locale: string
+    locale: string,
   ): Promise<QualityReport> {
     const report: QualityReport = {
       score: 100,
       issues: [],
-      suggestions: []
+      suggestions: [],
     };
 
     // Check for missing placeholders
     const originalPlaceholders = this.extractPlaceholders(original);
     const translationPlaceholders = this.extractPlaceholders(translation);
-    
+
     const missingPlaceholders = originalPlaceholders.filter(
-      p => !translationPlaceholders.includes(p)
+      p => !translationPlaceholders.includes(p),
     );
 
     if (missingPlaceholders.length > 0) {
       report.score -= 20;
       report.issues.push({
         type: 'MISSING_PLACEHOLDER',
-        message: `Missing placeholders: ${missingPlaceholders.join(', ')}`
+        message: `Missing placeholders: ${missingPlaceholders.join(', ')}`,
       });
     }
 
@@ -586,7 +594,7 @@ export class TranslationQualityService {
       report.score -= 10;
       report.issues.push({
         type: 'LENGTH_INCONSISTENCY',
-        message: `Translation length ratio: ${lengthRatio.toFixed(2)}`
+        message: `Translation length ratio: ${lengthRatio.toFixed(2)}`,
       });
     }
 
@@ -611,7 +619,7 @@ export class TranslationQualityService {
     if (config.numberFormat.currency && !text.includes(config.numberFormat.currency)) {
       issues.push({
         type: 'CURRENCY_FORMATTING',
-        message: `Missing currency symbol: ${config.numberFormat.currency}`
+        message: `Missing currency symbol: ${config.numberFormat.currency}`,
       });
     }
 
@@ -627,11 +635,12 @@ export class TranslationQualityService {
 ### **Component Localization**
 
 #### **Localized Components**
+
 ```typescript
 // Localized component base
 export abstract class LocalizedComponent {
   @Input() locale: string = 'en';
-  
+
   protected getDirection(): 'ltr' | 'rtl' {
     return getLocaleConfig(this.locale).direction;
   }
@@ -657,11 +666,16 @@ export abstract class LocalizedComponent {
       <h3 [dir]="getDirection()">{{ recipe.title }}</h3>
       <p [dir]="getDirection()">{{ recipe.description }}</p>
       <div class="recipe-meta">
-        <span>{{ 'COOKING_TIME' | translate:locale }}: {{ recipe.cookingTime }} {{ 'MINUTES' | translate:locale }}</span>
-        <span>{{ 'DIFFICULTY' | translate:locale }}: {{ recipe.difficulty | translate:locale }}</span>
+        <span
+          >{{ 'COOKING_TIME' | translate: locale }}: {{ recipe.cookingTime }}
+          {{ 'MINUTES' | translate: locale }}</span
+        >
+        <span
+          >{{ 'DIFFICULTY' | translate: locale }}: {{ recipe.difficulty | translate: locale }}</span
+        >
       </div>
     </div>
-  `
+  `,
 })
 export class LocalizedRecipeCardComponent extends LocalizedComponent {
   @Input() recipe: LocalizedRecipe;
@@ -671,50 +685,53 @@ export class LocalizedRecipeCardComponent extends LocalizedComponent {
 ### **Responsive Design for RTL**
 
 #### **RTL CSS Support**
+
 ```scss
 // RTL support styles
 .rtl {
   direction: rtl;
   text-align: right;
-  
+
   .recipe-card {
     .recipe-meta {
       flex-direction: row-reverse;
     }
-    
+
     .ingredient-list {
       padding-right: 0;
       padding-left: 20px;
     }
-    
+
     .step-number {
       margin-right: 0;
       margin-left: 10px;
     }
   }
-  
+
   .navigation {
     .nav-item {
       margin-right: 0;
       margin-left: 15px;
     }
   }
-  
+
   .form-group {
     label {
       text-align: right;
     }
-    
-    input, textarea, select {
+
+    input,
+    textarea,
+    select {
       text-align: right;
     }
   }
-  
+
   .button-group {
     .btn {
       margin-right: 0;
       margin-left: 10px;
-      
+
       &:first-child {
         margin-left: 0;
       }
@@ -730,6 +747,7 @@ export class LocalizedRecipeCardComponent extends LocalizedComponent {
 ### **Translation Coverage**
 
 #### **Coverage Analysis**
+
 ```typescript
 // Translation coverage service
 @Injectable()
@@ -745,18 +763,18 @@ export class TranslationCoverageService {
       translatedKeys,
       coverage,
       missingKeys: totalKeys - translatedKeys,
-      lastUpdated: await this.getLastTranslationDate(locale)
+      lastUpdated: await this.getLastTranslationDate(locale),
     };
   }
 
   async getMissingTranslations(locale: string): Promise<MissingTranslation[]> {
     const missing = await this.translationRepository.getMissingTranslations(locale);
-    
+
     return missing.map(item => ({
       key: item.key,
       context: item.context,
       sourceText: item.sourceText,
-      priority: this.calculatePriority(item)
+      priority: this.calculatePriority(item),
     }));
   }
 
@@ -772,6 +790,7 @@ export class TranslationCoverageService {
 ### **Translation Performance**
 
 #### **Performance Monitoring**
+
 ```typescript
 // Translation performance monitoring
 @Injectable()
@@ -781,20 +800,20 @@ export class TranslationPerformanceService {
       cacheHitRate: await this.calculateCacheHitRate(),
       averageResponseTime: await this.calculateAverageResponseTime(),
       fallbackUsage: await this.calculateFallbackUsage(),
-      translationErrors: await this.getTranslationErrors()
+      translationErrors: await this.getTranslationErrors(),
     };
 
     return {
       timestamp: new Date(),
       metrics,
-      recommendations: await this.generateRecommendations(metrics)
+      recommendations: await this.generateRecommendations(metrics),
     };
   }
 
   private async calculateCacheHitRate(): Promise<number> {
     const hits = await this.cacheService.getStats('hits');
     const misses = await this.cacheService.getStats('misses');
-    return hits / (hits + misses) * 100;
+    return (hits / (hits + misses)) * 100;
   }
 
   private async calculateAverageResponseTime(): Promise<number> {
@@ -811,6 +830,7 @@ export class TranslationPerformanceService {
 ### **Localized API Endpoints**
 
 #### **API Localization Service**
+
 ```typescript
 // API localization service
 @Injectable()
@@ -828,20 +848,20 @@ export class APILocalizationService {
   async searchLocalizedRecipes(
     query: string,
     locale: string,
-    filters?: SearchFilters
+    filters?: SearchFilters,
   ): Promise<LocalizedRecipe[]> {
     const recipes = await this.recipeService.searchRecipes(query, filters);
-    
+
     return await Promise.all(
-      recipes.map(recipe => this.translationService.translateRecipe(recipe, locale))
+      recipes.map(recipe => this.translationService.translateRecipe(recipe, locale)),
     );
   }
 
   async getLocalizedCategories(locale: string): Promise<LocalizedCategory[]> {
     const categories = await this.categoryService.getCategories();
-    
+
     return await Promise.all(
-      categories.map(category => this.translationService.translateCategory(category, locale))
+      categories.map(category => this.translationService.translateCategory(category, locale)),
     );
   }
 }
@@ -850,6 +870,7 @@ export class APILocalizationService {
 ### **Localized API Response**
 
 #### **Response Formatting**
+
 ```typescript
 // Localized API response
 export interface LocalizedAPIResponse<T> {
@@ -869,14 +890,14 @@ export class LocalizationInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const locale = request.locale || 'en';
-    
+
     return next.handle().pipe(
       map(data => {
         if (this.shouldLocalize(data)) {
           return this.localizeResponse(data, locale);
         }
         return data;
-      })
+      }),
     );
   }
 
@@ -892,8 +913,8 @@ export class LocalizationInterceptor implements NestInterceptor {
       metadata: {
         translationCoverage: this.calculateCoverage(data, locale),
         fallbackUsed: this.checkFallbackUsed(data, locale),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 }
@@ -913,7 +934,7 @@ export class LocalizationInterceptor implements NestInterceptor {
 
 ---
 
-*Document Version: 1.0.0*  
-*Last Updated: December 28, 2024*  
-*Status: Localization & i18n Document*  
-*Next Review: January 28, 2025* 
+_Document Version: 1.0.0_  
+_Last Updated: December 28, 2024_  
+_Status: Localization & i18n Document_  
+_Next Review: January 28, 2025_

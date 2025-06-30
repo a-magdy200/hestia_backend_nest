@@ -2,33 +2,39 @@
 
 ## 📋 Document Information
 
-| **Document Type** | API & Integration Handbook |
-|-------------------|----------------------------|
-| **Version** | 1.0.0 |
-| **Last Updated** | December 28, 2024 |
-| **Next Review** | January 28, 2025 |
-| **Document Owner** | API Development Team |
-| **Stakeholders** | Developers, Integration Partners, Third-Party Vendors |
-| **Classification** | Technical Reference Document |
+| **Document Type**  | API & Integration Handbook                                                  |
+| ------------------ | --------------------------------------------------------------------------- |
+| **Version**        | 2.0.0                                                                       |
+| **Last Updated**   | December 28, 2024                                                           |
+| **Next Review**    | February 28, 2025                                                           |
+| **Document Owner** | API Development Team                                                        |
+| **Stakeholders**   | Developers, Integration Partners, Third-Party Vendors, Enterprise Customers |
+| **Classification** | Technical Reference Document                                                |
+| **Status**         | Active - Under Development                                                  |
 
 ---
 
 ## 🎯 Executive Summary
 
-This document provides comprehensive guidance for integrating with the Hestia Enterprise SaaS Platform through our RESTful APIs, GraphQL endpoints, and webhook system. It serves as the definitive reference for developers, integration partners, and third-party vendors.
+This document provides comprehensive guidance for integrating with the Hestia Enterprise SaaS Platform through our RESTful APIs, GraphQL endpoints, webhook system, and extensive integration capabilities. It serves as the definitive reference for developers, integration partners, third-party vendors, and enterprise customers seeking to leverage our platform's extensive API ecosystem.
 
-### **Integration Capabilities**
-- **RESTful APIs**: 47+ endpoints with comprehensive CRUD operations
-- **GraphQL Support**: Flexible query language for complex data requirements
-- **Webhook System**: Real-time event notifications and integrations
-- **SDK Support**: Multi-language SDKs for rapid development
-- **Developer Tools**: Interactive documentation, testing, and debugging
+### **Comprehensive Integration Capabilities**
+
+- **🔗 RESTful APIs**: 47+ endpoints with comprehensive CRUD operations and advanced filtering
+- **⚡ GraphQL Support**: Flexible query language for complex data requirements and real-time subscriptions
+- **🔔 Webhook System**: Real-time event notifications, integrations, and automated workflows
+- **📚 SDK Support**: Multi-language SDKs (JavaScript, Python, PHP, Java, C#) for rapid development
+- **🛠️ Developer Tools**: Interactive documentation, testing environments, debugging tools, and analytics
+- **🏢 Enterprise Integration**: SSO, SAML, OAuth 2.0, and enterprise system connectivity
+- **🌍 Global API**: Multi-region deployment with edge computing and CDN support
+- **📊 API Analytics**: Comprehensive usage analytics, performance monitoring, and optimization insights
 
 ---
 
 ## 🔗 API Overview
 
 ### **Base URL Structure**
+
 ```
 Production: https://api.hestia.com/v1
 Staging:    https://api-staging.hestia.com/v1
@@ -36,12 +42,14 @@ Development: https://api-dev.hestia.com/v1
 ```
 
 ### **Authentication Methods**
+
 - **JWT Bearer Token**: Primary authentication method
 - **API Key**: For service-to-service integrations
 - **OAuth 2.0**: For third-party application integrations
 - **SSO Integration**: For enterprise customers
 
 ### **Response Format**
+
 All API responses follow a consistent JSON structure:
 
 ```json
@@ -57,6 +65,7 @@ All API responses follow a consistent JSON structure:
 ```
 
 ### **Error Handling**
+
 ```json
 {
   "success": false,
@@ -82,6 +91,7 @@ All API responses follow a consistent JSON structure:
 ### **JWT Authentication**
 
 #### **Obtaining Access Token**
+
 ```http
 POST /auth/login
 Content-Type: application/json
@@ -93,6 +103,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -106,12 +117,14 @@ Content-Type: application/json
 ```
 
 #### **Using Access Token**
+
 ```http
 GET /recipes
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 #### **Token Refresh**
+
 ```http
 POST /auth/refresh
 Content-Type: application/json
@@ -124,6 +137,7 @@ Content-Type: application/json
 ### **API Key Authentication**
 
 #### **Service-to-Service Integration**
+
 ```http
 GET /recipes
 X-API-Key: sk_live_1234567890abcdef
@@ -132,6 +146,7 @@ X-API-Key: sk_live_1234567890abcdef
 ### **OAuth 2.0 Integration**
 
 #### **Authorization Flow**
+
 ```http
 GET /auth/oauth/authorize
 ?client_id=your_client_id
@@ -142,6 +157,7 @@ GET /auth/oauth/authorize
 ```
 
 #### **Token Exchange**
+
 ```http
 POST /auth/oauth/token
 Content-Type: application/x-www-form-urlencoded
@@ -160,6 +176,7 @@ grant_type=authorization_code
 ### **User Management**
 
 #### **User Registration**
+
 ```http
 POST /users
 Content-Type: application/json
@@ -174,6 +191,7 @@ Content-Type: application/json
 ```
 
 #### **User Profile**
+
 ```http
 GET /users/profile
 Authorization: Bearer {token}
@@ -195,6 +213,7 @@ Content-Type: application/json
 ```
 
 #### **User Sessions**
+
 ```http
 GET /users/sessions
 Authorization: Bearer {token}
@@ -208,6 +227,7 @@ Authorization: Bearer {token}
 #### **Recipe CRUD Operations**
 
 **Create Recipe**
+
 ```http
 POST /recipes
 Authorization: Bearer {token}
@@ -235,12 +255,14 @@ Content-Type: application/json
 ```
 
 **Get Recipe**
+
 ```http
 GET /recipes/{recipeId}
 Authorization: Bearer {token}
 ```
 
 **Update Recipe**
+
 ```http
 PUT /recipes/{recipeId}
 Authorization: Bearer {token}
@@ -253,6 +275,7 @@ Content-Type: application/json
 ```
 
 **Delete Recipe**
+
 ```http
 DELETE /recipes/{recipeId}
 Authorization: Bearer {token}
@@ -261,6 +284,7 @@ Authorization: Bearer {token}
 #### **Recipe Search & Discovery**
 
 **Search Recipes**
+
 ```http
 GET /recipes/search
 ?q=pizza
@@ -275,6 +299,7 @@ GET /recipes/search
 ```
 
 **Get Popular Recipes**
+
 ```http
 GET /recipes/popular
 ?timeframe=week
@@ -283,6 +308,7 @@ GET /recipes/popular
 ```
 
 **Get Trending Recipes**
+
 ```http
 GET /recipes/trending
 ?limit=10
@@ -292,6 +318,7 @@ GET /recipes/trending
 #### **Recipe Interactions**
 
 **Rate Recipe**
+
 ```http
 POST /recipes/{recipeId}/ratings
 Authorization: Bearer {token}
@@ -304,6 +331,7 @@ Content-Type: application/json
 ```
 
 **Favorite Recipe**
+
 ```http
 POST /recipes/{recipeId}/favorites
 Authorization: Bearer {token}
@@ -313,6 +341,7 @@ Authorization: Bearer {token}
 ```
 
 **Share Recipe**
+
 ```http
 POST /recipes/{recipeId}/share
 Authorization: Bearer {token}
@@ -329,6 +358,7 @@ Content-Type: application/json
 #### **Ingredient CRUD Operations**
 
 **Get Ingredients**
+
 ```http
 GET /ingredients
 ?search=tomato
@@ -339,11 +369,13 @@ GET /ingredients
 ```
 
 **Get Ingredient Details**
+
 ```http
 GET /ingredients/{ingredientId}
 ```
 
 **Create Custom Ingredient**
+
 ```http
 POST /ingredients
 Authorization: Bearer {token}
@@ -367,6 +399,7 @@ Content-Type: application/json
 #### **Ingredient Search & Discovery**
 
 **Search Ingredients**
+
 ```http
 GET /ingredients/search
 ?q=tomato
@@ -378,6 +411,7 @@ GET /ingredients/search
 ```
 
 **Get Ingredient Substitutions**
+
 ```http
 GET /ingredients/{ingredientId}/substitutions
 ```
@@ -387,6 +421,7 @@ GET /ingredients/{ingredientId}/substitutions
 #### **Item CRUD Operations**
 
 **Create Item**
+
 ```http
 POST /items
 Authorization: Bearer {token}
@@ -408,6 +443,7 @@ Content-Type: application/json
 ```
 
 **Get Items**
+
 ```http
 GET /items
 Authorization: Bearer {token}
@@ -419,6 +455,7 @@ Authorization: Bearer {token}
 ```
 
 **Update Item**
+
 ```http
 PUT /items/{itemId}
 Authorization: Bearer {token}
@@ -435,6 +472,7 @@ Content-Type: application/json
 #### **Recipe Collections**
 
 **Create Collection**
+
 ```http
 POST /collections
 Authorization: Bearer {token}
@@ -449,6 +487,7 @@ Content-Type: application/json
 ```
 
 **Add Recipe to Collection**
+
 ```http
 POST /collections/{collectionId}/recipes
 Authorization: Bearer {token}
@@ -460,6 +499,7 @@ Content-Type: application/json
 ```
 
 **Get Collection Recipes**
+
 ```http
 GET /collections/{collectionId}/recipes
 ?page=1
@@ -471,6 +511,7 @@ GET /collections/{collectionId}/recipes
 #### **User Analytics**
 
 **Get User Statistics**
+
 ```http
 GET /analytics/user
 Authorization: Bearer {token}
@@ -479,6 +520,7 @@ Authorization: Bearer {token}
 ```
 
 **Get Recipe Analytics**
+
 ```http
 GET /analytics/recipes/{recipeId}
 Authorization: Bearer {token}
@@ -488,6 +530,7 @@ Authorization: Bearer {token}
 #### **Business Intelligence**
 
 **Get Platform Analytics**
+
 ```http
 GET /analytics/platform
 Authorization: Bearer {token}
@@ -500,12 +543,14 @@ Authorization: Bearer {token}
 ## 🔍 GraphQL API
 
 ### **GraphQL Endpoint**
+
 ```
 Production: https://api.hestia.com/graphql
 Staging:    https://api-staging.hestia.com/graphql
 ```
 
 ### **Schema Introspection**
+
 ```graphql
 query IntrospectionQuery {
   __schema {
@@ -546,6 +591,7 @@ fragment FullType on __Type {
 ### **Recipe Queries**
 
 **Get Recipe with Details**
+
 ```graphql
 query GetRecipe($id: ID!) {
   recipe(id: $id) {
@@ -596,6 +642,7 @@ query GetRecipe($id: ID!) {
 ```
 
 **Search Recipes with Filters**
+
 ```graphql
 query SearchRecipes(
   $query: String
@@ -645,6 +692,7 @@ query SearchRecipes(
 ### **Real-time Subscriptions**
 
 **Recipe Updates**
+
 ```graphql
 subscription RecipeUpdates($recipeId: ID!) {
   recipeUpdated(recipeId: $recipeId) {
@@ -658,6 +706,7 @@ subscription RecipeUpdates($recipeId: ID!) {
 ```
 
 **User Activity**
+
 ```graphql
 subscription UserActivity {
   userActivity {
@@ -677,6 +726,7 @@ subscription UserActivity {
 ### **Webhook Configuration**
 
 #### **Register Webhook**
+
 ```http
 POST /webhooks
 Authorization: Bearer {token}
@@ -691,6 +741,7 @@ Content-Type: application/json
 ```
 
 #### **Webhook Events**
+
 ```json
 {
   "id": "evt_1234567890",
@@ -708,6 +759,7 @@ Content-Type: application/json
 ```
 
 #### **Webhook Verification**
+
 ```javascript
 const crypto = require('crypto');
 
@@ -716,29 +768,26 @@ function verifyWebhook(payload, signature, secret) {
     .createHmac('sha256', secret)
     .update(payload, 'utf8')
     .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 ```
 
 ### **Supported Events**
 
-| **Event** | **Description** | **Data Payload** |
-|-----------|-----------------|------------------|
-| `user.registered` | New user registration | User object |
-| `user.updated` | User profile update | User object |
-| `recipe.created` | New recipe creation | Recipe object |
-| `recipe.updated` | Recipe modification | Recipe object |
-| `recipe.deleted` | Recipe deletion | Recipe ID |
-| `recipe.rated` | Recipe rating/review | Rating object |
-| `recipe.favorited` | Recipe favorited | Recipe and User IDs |
-| `ingredient.created` | New ingredient | Ingredient object |
-| `collection.created` | New collection | Collection object |
-| `item.created` | New item | Item object |
-| `item.updated` | Item modification | Item object |
+| **Event**            | **Description**       | **Data Payload**    |
+| -------------------- | --------------------- | ------------------- |
+| `user.registered`    | New user registration | User object         |
+| `user.updated`       | User profile update   | User object         |
+| `recipe.created`     | New recipe creation   | Recipe object       |
+| `recipe.updated`     | Recipe modification   | Recipe object       |
+| `recipe.deleted`     | Recipe deletion       | Recipe ID           |
+| `recipe.rated`       | Recipe rating/review  | Rating object       |
+| `recipe.favorited`   | Recipe favorited      | Recipe and User IDs |
+| `ingredient.created` | New ingredient        | Ingredient object   |
+| `collection.created` | New collection        | Collection object   |
+| `item.created`       | New item              | Item object         |
+| `item.updated`       | Item modification     | Item object         |
 
 ---
 
@@ -747,17 +796,19 @@ function verifyWebhook(payload, signature, secret) {
 ### **JavaScript/TypeScript SDK**
 
 #### **Installation**
+
 ```bash
 npm install @hestia/sdk
 ```
 
 #### **Basic Usage**
+
 ```javascript
 import { HestiaClient } from '@hestia/sdk';
 
 const client = new HestiaClient({
   apiKey: 'your_api_key',
-  environment: 'production'
+  environment: 'production',
 });
 
 // Create a recipe
@@ -765,16 +816,14 @@ const recipe = await client.recipes.create({
   title: 'Homemade Pizza',
   description: 'Delicious pizza recipe',
   instructions: '1. Prepare dough...',
-  ingredients: [
-    { name: 'Flour', quantity: 2, unit: 'cups' }
-  ]
+  ingredients: [{ name: 'Flour', quantity: 2, unit: 'cups' }],
 });
 
 // Search recipes
 const searchResults = await client.recipes.search({
   query: 'pizza',
   cuisine: 'italian',
-  limit: 10
+  limit: 10,
 });
 
 // Get user profile
@@ -782,36 +831,35 @@ const profile = await client.users.getProfile();
 ```
 
 #### **Advanced Features**
+
 ```javascript
 // Real-time subscriptions
 const subscription = client.subscriptions.recipeUpdates('recipe_123', {
-  onUpdate: (recipe) => {
+  onUpdate: recipe => {
     console.log('Recipe updated:', recipe);
-  }
+  },
 });
 
 // Batch operations
-const batchResults = await client.recipes.batchCreate([
-  recipe1,
-  recipe2,
-  recipe3
-]);
+const batchResults = await client.recipes.batchCreate([recipe1, recipe2, recipe3]);
 
 // File upload
 const imageUrl = await client.files.upload(file, {
   type: 'recipe-image',
-  recipeId: 'recipe_123'
+  recipeId: 'recipe_123',
 });
 ```
 
 ### **Python SDK**
 
 #### **Installation**
+
 ```bash
 pip install hestia-sdk
 ```
 
 #### **Usage**
+
 ```python
 from hestia import HestiaClient
 
@@ -838,11 +886,13 @@ results = client.recipes.search(
 ### **PHP SDK**
 
 #### **Installation**
+
 ```bash
 composer require hestia/php-sdk
 ```
 
 #### **Usage**
+
 ```php
 use Hestia\HestiaClient;
 
@@ -871,6 +921,7 @@ $results = $client->recipes->search([
 ## 📊 Rate Limiting & Quotas
 
 ### **Rate Limit Headers**
+
 ```http
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
@@ -879,22 +930,23 @@ X-RateLimit-Reset: 1640995200
 
 ### **Rate Limit Tiers**
 
-| **Tier** | **Requests/Hour** | **Requests/Day** | **Concurrent Requests** |
-|----------|-------------------|------------------|-------------------------|
-| Free | 100 | 1,000 | 5 |
-| Basic | 1,000 | 10,000 | 20 |
-| Professional | 10,000 | 100,000 | 50 |
-| Enterprise | 100,000 | 1,000,000 | 200 |
+| **Tier**     | **Requests/Hour** | **Requests/Day** | **Concurrent Requests** |
+| ------------ | ----------------- | ---------------- | ----------------------- |
+| Free         | 100               | 1,000            | 5                       |
+| Basic        | 1,000             | 10,000           | 20                      |
+| Professional | 10,000            | 100,000          | 50                      |
+| Enterprise   | 100,000           | 1,000,000        | 200                     |
 
 ### **Handling Rate Limits**
+
 ```javascript
 try {
   const response = await client.recipes.search({ query: 'pizza' });
 } catch (error) {
   if (error.code === 'RATE_LIMIT_EXCEEDED') {
     const resetTime = error.headers['x-ratelimit-reset'];
-    const waitTime = (resetTime * 1000) - Date.now();
-    
+    const waitTime = resetTime * 1000 - Date.now();
+
     // Wait and retry
     setTimeout(() => {
       // Retry request
@@ -908,37 +960,40 @@ try {
 ## 🔒 Security Best Practices
 
 ### **API Key Security**
+
 - Store API keys securely (environment variables, secret management)
 - Rotate API keys regularly
 - Use different keys for different environments
 - Never commit API keys to version control
 
 ### **Request Security**
+
 ```javascript
 // Always use HTTPS
 const client = new HestiaClient({
   apiKey: process.env.HESTIA_API_KEY,
-  baseURL: 'https://api.hestia.com'
+  baseURL: 'https://api.hestia.com',
 });
 
 // Validate input data
 const recipe = await client.recipes.create({
   title: sanitizeInput(recipeData.title),
-  description: sanitizeInput(recipeData.description)
+  description: sanitizeInput(recipeData.description),
 });
 ```
 
 ### **Webhook Security**
+
 ```javascript
 // Verify webhook signatures
 app.post('/webhooks/hestia', (req, res) => {
   const signature = req.headers['x-hestia-signature'];
   const payload = JSON.stringify(req.body);
-  
+
   if (!verifyWebhook(payload, signature, process.env.WEBHOOK_SECRET)) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
-  
+
   // Process webhook
   handleWebhook(req.body);
   res.status(200).json({ received: true });
@@ -952,6 +1007,7 @@ app.post('/webhooks/hestia', (req, res) => {
 ### **API Testing Tools**
 
 #### **Postman Collection**
+
 ```json
 {
   "info": {
@@ -985,6 +1041,7 @@ app.post('/webhooks/hestia', (req, res) => {
 ```
 
 #### **cURL Examples**
+
 ```bash
 # Login
 curl -X POST https://api.hestia.com/v1/auth/login \
@@ -1003,20 +1060,23 @@ curl -X POST https://api.hestia.com/v1/recipes \
 ```
 
 ### **Mock Server**
+
 ```javascript
 // Mock server for development
 const mockServer = {
   recipes: {
-    create: (data) => Promise.resolve({
-      id: 'mock_recipe_123',
-      ...data,
-      createdAt: new Date().toISOString()
-    }),
-    search: (params) => Promise.resolve({
-      data: [],
-      pagination: { page: 1, limit: 20, total: 0 }
-    })
-  }
+    create: data =>
+      Promise.resolve({
+        id: 'mock_recipe_123',
+        ...data,
+        createdAt: new Date().toISOString(),
+      }),
+    search: params =>
+      Promise.resolve({
+        data: [],
+        pagination: { page: 1, limit: 20, total: 0 },
+      }),
+  },
 };
 ```
 
@@ -1025,6 +1085,7 @@ const mockServer = {
 ## 📈 Monitoring & Analytics
 
 ### **API Analytics Dashboard**
+
 ```javascript
 // Track API usage
 const analytics = {
@@ -1035,13 +1096,14 @@ const analytics = {
       method,
       duration,
       status,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-  }
+  },
 };
 ```
 
 ### **Error Tracking**
+
 ```javascript
 // Comprehensive error handling
 try {
@@ -1052,10 +1114,10 @@ try {
     extra: {
       endpoint: '/recipes',
       method: 'POST',
-      data: recipeData
-    }
+      data: recipeData,
+    },
   });
-  
+
   // Handle specific error types
   switch (error.code) {
     case 'VALIDATION_ERROR':
@@ -1065,7 +1127,7 @@ try {
       // Handle rate limiting
       break;
     default:
-      // Handle other errors
+    // Handle other errors
   }
 }
 ```
@@ -1082,7 +1144,7 @@ try {
 
 ---
 
-*Document Version: 1.0.0*  
-*Last Updated: December 28, 2024*  
-*Status: Technical Reference Document*  
-*Next Review: January 28, 2025* 
+_Document Version: 1.0.0_  
+_Last Updated: December 28, 2024_  
+_Status: Technical Reference Document_  
+_Next Review: January 28, 2025_
