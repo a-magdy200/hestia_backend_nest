@@ -125,19 +125,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   /**
+   * Extract request ID from request headers
+   * @param request - Express request object
+   * @returns Request ID string or undefined
+   */
+  private extractRequestIdFromHeaders(request: IRequest): string | undefined {
+    const requestId = request.headers?.['x-request-id'] || request.headers?.['x-correlation-id'];
+
+    if (!requestId) {
+      return undefined;
+    }
+
+    return Array.isArray(requestId) ? (requestId[0] as string) : requestId;
+  }
+
+  /**
    * Extract request ID from request or generate new one
    * @param request - Express request object
    * @returns Request ID string
    */
   private extractRequestId(request: IRequest): string {
-    const requestId = request.headers?.['x-request-id'] || request.headers?.['x-correlation-id'];
-    if (typeof requestId === 'string' && requestId) {
-      return requestId;
-    }
-    if (Array.isArray(requestId) && requestId.length > 0) {
-      return requestId[0] as string;
-    }
-    return uuidv4();
+    const requestId = this.extractRequestIdFromHeaders(request);
+    return requestId || uuidv4();
   }
 
   /**

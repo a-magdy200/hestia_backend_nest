@@ -2,7 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus, ValidationPipe } from '@n
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 import { ResendVerificationDto } from '../../dto/auth/resend-verification.dto';
-import { AuthenticationService } from '../../services/authentication.service';
+import { AuthenticationService } from '../../services/authentication/authentication.service';
 import { LoggingService } from '../../services/logging.service';
 
 /**

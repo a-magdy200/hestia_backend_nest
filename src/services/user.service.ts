@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
 import { UserProfile } from '../database/entities/user-profile.entity';
 import { User } from '../database/entities/user.entity';
@@ -9,7 +9,6 @@ import { CreateUserDto } from '../dto/user/create-user.dto';
 import { UpdateUserDto } from '../dto/user/update-user.dto';
 import { UserSearchDto } from '../dto/user/user-search.dto';
 import { UserRole, UserStatus, UserVerificationStatus } from '../interfaces/enums/user.enum';
-import { IUserProfileRepository } from '../interfaces/repositories/user-profile-repository.interface';
 import { IUserRepository } from '../interfaces/repositories/user-repository.interface';
 import {
   IUserService,
@@ -18,6 +17,13 @@ import {
 } from '../interfaces/services/user-service.interface';
 
 import { LoggingService } from './logging.service';
+import {
+  calculateBasicStatistics,
+  calculateTimeBasedStatistics,
+  calculateSecurityStatistics,
+  calculateDetailedStatistics,
+} from './user-statistics.service';
+import { PasswordService } from './authentication/password.service';
 
 /**
  * User service implementation
@@ -39,7 +45,7 @@ export class UserService implements IUserService {
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
     private readonly userRepo: IUserRepository,
-
+    private readonly passwordService: PasswordService,
     private readonly loggingService: LoggingService,
   ) {}
 
@@ -245,7 +251,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Failed to get users by status', {
         requestId,
         status,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -287,7 +293,7 @@ export class UserService implements IUserService {
         requestId,
         page,
         limit,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -308,45 +314,13 @@ export class UserService implements IUserService {
     });
 
     try {
-      const queryBuilder = this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.profile', 'profile')
-        .where('user.isDeleted = :isDeleted', { isDeleted: false });
-
-      // Apply search filters
-      if (searchDto.email) {
-        queryBuilder.andWhere('user.email ILIKE :email', { email: `%${searchDto.email}%` });
-      }
-
-      if (searchDto.role) {
-        queryBuilder.andWhere('user.role = :role', { role: searchDto.role });
-      }
-
-      if (searchDto.status) {
-        queryBuilder.andWhere('user.status = :status', { status: searchDto.status });
-      }
-
-      if (searchDto.isActive !== undefined) {
-        queryBuilder.andWhere('user.isActive = :isActive', { isActive: searchDto.isActive });
-      }
-
-      if (searchDto.tenantId) {
-        queryBuilder.andWhere('user.tenantId = :tenantId', { tenantId: searchDto.tenantId });
-      }
-
-      // Apply sorting
-      const sortField = searchDto.sortBy || 'createdAt';
-      const sortOrder = searchDto.sortOrder || 'DESC';
-      queryBuilder.orderBy(`user.${sortField}`, sortOrder as 'ASC' | 'DESC');
-
-      // Apply pagination
-      const page = searchDto.page || 1;
-      const limit = searchDto.limit || 10;
-      const offset = (page - 1) * limit;
-
-      queryBuilder.skip(offset).take(limit);
+      const queryBuilder = this.buildSearchQueryBuilder();
+      this.applySearchFilters(queryBuilder, searchDto);
+      this.applySortingAndPagination(queryBuilder, searchDto);
 
       const users = await queryBuilder.getMany();
+      const page = searchDto.page || 1;
+      const limit = searchDto.limit || 10;
 
       this.loggingService.debug('UserService: User search completed', {
         requestId,
@@ -355,7 +329,13 @@ export class UserService implements IUserService {
         limit,
       });
 
-      return users;
+      return {
+        users,
+        total: users.length,
+        page,
+        limit,
+        totalPages: Math.ceil(users.length / limit),
+      };
     } catch (error) {
       this.loggingService.error('UserService: Failed to search users', {
         requestId,
@@ -363,6 +343,62 @@ export class UserService implements IUserService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Build base search query builder
+   */
+  private buildSearchQueryBuilder(): SelectQueryBuilder<User> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('user.isDeleted = :isDeleted', { isDeleted: false });
+  }
+
+  /**
+   * Apply search filters to query builder
+   */
+  private applySearchFilters(
+    queryBuilder: SelectQueryBuilder<User>,
+    searchDto: UserSearchDto,
+  ): void {
+    if (searchDto.email) {
+      queryBuilder.andWhere('user.email ILIKE :email', { email: `%${searchDto.email}%` });
+    }
+
+    if (searchDto.role) {
+      queryBuilder.andWhere('user.role = :role', { role: searchDto.role });
+    }
+
+    if (searchDto.status) {
+      queryBuilder.andWhere('user.status = :status', { status: searchDto.status });
+    }
+
+    if (searchDto.isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', { isActive: searchDto.isActive });
+    }
+
+    if (searchDto.tenantId) {
+      queryBuilder.andWhere('user.tenantId = :tenantId', { tenantId: searchDto.tenantId });
+    }
+  }
+
+  /**
+   * Apply sorting and pagination to query builder
+   */
+  private applySortingAndPagination(
+    queryBuilder: SelectQueryBuilder<User>,
+    searchDto: UserSearchDto,
+  ): void {
+    const sortField = searchDto.sortBy || 'createdAt';
+    const sortOrder = searchDto.sortOrder || 'DESC';
+    queryBuilder.orderBy(`user.${sortField}`, sortOrder as 'ASC' | 'DESC');
+
+    const page = searchDto.page || 1;
+    const limit = searchDto.limit || 10;
+    const offset = (page - 1) * limit;
+
+    queryBuilder.skip(offset).take(limit);
   }
 
   /**
@@ -380,35 +416,7 @@ export class UserService implements IUserService {
         throw new NotFoundException('User not found');
       }
 
-      // Update user fields
-      if (updateUserDto.email && updateUserDto.email !== user.email) {
-        // Check if new email already exists
-        const existingUser = await this.getUserByEmail(updateUserDto.email, requestId);
-        if (existingUser && existingUser.id !== userId) {
-          throw new ConflictException('Email already in use');
-        }
-        user.email = updateUserDto.email;
-      }
-
-      if (updateUserDto.role) {
-        user.role = updateUserDto.role;
-      }
-
-      if (updateUserDto.status) {
-        user.status = updateUserDto.status;
-      }
-
-      if (updateUserDto.isActive !== undefined) {
-        user.isActive = updateUserDto.isActive;
-      }
-
-      // Update password if provided
-      if (updateUserDto.password) {
-        const saltRounds = 12;
-        user.passwordHash = await bcrypt.hash(updateUserDto.password, saltRounds);
-        user.passwordChangedAt = new Date();
-      }
-
+      await this.updateUserFields(user, updateUserDto, requestId);
       const updatedUser = await this.userRepository.save(user);
 
       this.loggingService.debug('UserService: User updated successfully', {
@@ -425,6 +433,64 @@ export class UserService implements IUserService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
+    }
+  }
+
+  /**
+   * Update user fields
+   */
+  private async updateUserFields(
+    user: User,
+    updateUserDto: UpdateUserDto,
+    requestId: string,
+  ): Promise<void> {
+    await this.updateUserEmail(user, updateUserDto, requestId);
+    this.updateUserBasicFields(user, updateUserDto);
+    await this.updateUserPassword(user, updateUserDto);
+  }
+
+  /**
+   * Update user email with validation
+   */
+  private async updateUserEmail(
+    user: User,
+    updateUserDto: UpdateUserDto,
+    requestId: string,
+  ): Promise<void> {
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingUser = await this.getUserByEmail(updateUserDto.email, requestId);
+      if (existingUser && existingUser.id !== user.id) {
+        throw new ConflictException('Email already in use');
+      }
+      user.email = updateUserDto.email;
+    }
+  }
+
+  /**
+   * Update user basic fields
+   */
+  private updateUserBasicFields(user: User, updateUserDto: UpdateUserDto): void {
+    if (updateUserDto.role) {
+      user.role = updateUserDto.role;
+    }
+
+    if (updateUserDto.status) {
+      user.status = updateUserDto.status;
+    }
+
+    if (updateUserDto.isActive !== undefined) {
+      user.isActive = updateUserDto.isActive;
+    }
+  }
+
+  /**
+   * Update user password
+   */
+  private async updateUserPassword(user: User, updateUserDto: UpdateUserDto): Promise<void> {
+    if (updateUserDto.password) {
+      const saltRounds = 12;
+      user.passwordHash = await bcrypt.hash(updateUserDto.password, saltRounds);
+      user.passwordChangedAt = new Date();
     }
   }
 
@@ -496,7 +562,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Hard user deletion failed', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -525,7 +591,7 @@ export class UserService implements IUserService {
       this.loggingService.error('User restoration failed', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -549,7 +615,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Email existence check failed', {
         requestId,
         email,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -589,7 +655,7 @@ export class UserService implements IUserService {
     this.loggingService.info('Updating user password', { requestId, userId: id });
 
     try {
-      const hashedPassword = await this.passwordService.hashPassword(newPassword);
+      const hashedPassword = await this.passwordService.hashPassword(newPassword, requestId);
       const user = await this.userRepo.updatePassword(id, hashedPassword, requestId);
 
       this.loggingService.info('User password updated successfully', { requestId, userId: id });
@@ -599,7 +665,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Failed to update user password', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -664,7 +730,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Failed to increment login attempts', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -691,7 +757,7 @@ export class UserService implements IUserService {
       this.loggingService.error('Failed to reset login attempts', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -699,11 +765,12 @@ export class UserService implements IUserService {
 
   /**
    * Lock user account
-   * @param userId
-   * @param reason
-   * @param requestId
+   * @param userId - User ID
+   * @param reason - Lock reason
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when lock is complete
    */
-  async lockUserAccount(userId: string, reason: string, requestId: string): Promise<void> {
+  async lockAccount(userId: string, reason: string, requestId: string): Promise<User> {
     this.loggingService.debug('UserService: Locking user account', { requestId, userId, reason });
 
     try {
@@ -717,13 +784,15 @@ export class UserService implements IUserService {
       user.lockReason = reason;
       user.isActive = false;
 
-      await this.userRepository.save(user);
+      const updatedUser = await this.userRepository.save(user);
 
       this.loggingService.debug('UserService: User account locked', {
         requestId,
         userId,
         reason,
       });
+
+      return updatedUser;
     } catch (error) {
       this.loggingService.error('UserService: Failed to lock user account', {
         requestId,
@@ -736,10 +805,11 @@ export class UserService implements IUserService {
 
   /**
    * Unlock user account
-   * @param userId
-   * @param requestId
+   * @param userId - User ID
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when unlock is complete
    */
-  async unlockUserAccount(userId: string, requestId: string): Promise<void> {
+  async unlockAccount(userId: string, requestId: string): Promise<User> {
     this.loggingService.debug('UserService: Unlocking user account', { requestId, userId });
 
     try {
@@ -749,18 +819,20 @@ export class UserService implements IUserService {
       }
 
       user.status = UserStatus.ACTIVE;
-      user.lockedAt = undefined;
-      user.lockReason = undefined;
+      delete user.lockedAt;
+      delete user.lockReason;
       user.isActive = true;
       user.failedLoginAttempts = 0;
-      user.lastFailedLoginAt = undefined;
+      delete user.lastFailedLoginAt;
 
-      await this.userRepository.save(user);
+      const updatedUser = await this.userRepository.save(user);
 
       this.loggingService.debug('UserService: User account unlocked', {
         requestId,
         userId,
       });
+
+      return updatedUser;
     } catch (error) {
       this.loggingService.error('UserService: Failed to unlock user account', {
         requestId,
@@ -772,78 +844,34 @@ export class UserService implements IUserService {
   }
 
   /**
-   * Change user status
-   * @param id
-   * @param status
-   * @param requestId
-   */
-  async changeStatus(id: string, status: UserStatus, requestId: string): Promise<User> {
-    this.loggingService.info('Changing user status', { requestId, userId: id, status });
-
-    try {
-      const user = await this.userRepo.changeStatus(id, status, requestId);
-
-      this.loggingService.info('User status changed successfully', {
-        requestId,
-        userId: id,
-        status,
-      });
-
-      return user;
-    } catch (error) {
-      this.loggingService.error('Failed to change user status', {
-        requestId,
-        userId: id,
-        error: error.message,
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Change user role
-   * @param id
-   * @param role
-   * @param requestId
-   */
-  async changeRole(id: string, role: UserRole, requestId: string): Promise<User> {
-    this.loggingService.info('Changing user role', { requestId, userId: id, role });
-
-    try {
-      const user = await this.userRepo.changeRole(id, role, requestId);
-
-      this.loggingService.info('User role changed successfully', { requestId, userId: id, role });
-
-      return user;
-    } catch (error) {
-      this.loggingService.error('Failed to change user role', {
-        requestId,
-        userId: id,
-        error: error.message,
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Activate user account
-   * @param id
-   * @param requestId
+   * @param id - User ID
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when activation is complete
    */
-  async activateAccount(id: string, requestId: string): Promise<User> {
-    this.loggingService.info('Activating user account', { requestId, userId: id });
+  async activateUser(id: string, requestId: string): Promise<void> {
+    this.loggingService.debug('UserService: Activating user account', { requestId, userId: id });
 
     try {
-      const user = await this.changeStatus(id, UserStatus.ACTIVE, requestId);
+      const user = await this.getUserById(id, requestId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-      this.loggingService.info('User account activated successfully', { requestId, userId: id });
+      user.status = UserStatus.ACTIVE;
+      user.isActive = true;
 
-      return user;
-    } catch (error) {
-      this.loggingService.error('Failed to activate user account', {
+      await this.userRepository.save(user);
+
+      this.loggingService.debug('UserService: User account activated', {
         requestId,
         userId: id,
-        error: error.message,
+      });
+    } catch (error) {
+      this.loggingService.error('UserService: Failed to activate user account', {
+        requestId,
+        userId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -851,23 +879,33 @@ export class UserService implements IUserService {
 
   /**
    * Deactivate user account
-   * @param id
-   * @param requestId
+   * @param id - User ID
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when deactivation is complete
    */
-  async deactivateAccount(id: string, requestId: string): Promise<User> {
-    this.loggingService.info('Deactivating user account', { requestId, userId: id });
+  async deactivateUser(id: string, requestId: string): Promise<void> {
+    this.loggingService.debug('UserService: Deactivating user account', { requestId, userId: id });
 
     try {
-      const user = await this.changeStatus(id, UserStatus.INACTIVE, requestId);
+      const user = await this.getUserById(id, requestId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-      this.loggingService.info('User account deactivated successfully', { requestId, userId: id });
+      user.status = UserStatus.INACTIVE;
+      user.isActive = false;
 
-      return user;
-    } catch (error) {
-      this.loggingService.error('Failed to deactivate user account', {
+      await this.userRepository.save(user);
+
+      this.loggingService.debug('UserService: User account deactivated', {
         requestId,
         userId: id,
-        error: error.message,
+      });
+    } catch (error) {
+      this.loggingService.error('UserService: Failed to deactivate user account', {
+        requestId,
+        userId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -875,75 +913,83 @@ export class UserService implements IUserService {
 
   /**
    * Suspend user account
-   * @param id
-   * @param reason
-   * @param requestId
+   * @param id - User ID
+   * @param reason - Suspension reason
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when suspension is complete
    */
-  async suspendAccount(id: string, reason: string, requestId: string): Promise<User> {
-    this.loggingService.info('Suspending user account', { requestId, userId: id, reason });
+  async suspendUser(id: string, reason: string, requestId: string): Promise<void> {
+    this.loggingService.debug('UserService: Suspending user account', {
+      requestId,
+      userId: id,
+      reason,
+    });
 
     try {
-      const user = await this.changeStatus(id, UserStatus.SUSPENDED, requestId);
+      const user = await this.getUserById(id, requestId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-      this.loggingService.info('User account suspended successfully', {
+      user.status = UserStatus.SUSPENDED;
+      user.isActive = false;
+
+      await this.userRepository.save(user);
+
+      this.loggingService.debug('UserService: User account suspended', {
         requestId,
         userId: id,
         reason,
       });
-
-      return user;
     } catch (error) {
-      this.loggingService.error('Failed to suspend user account', {
+      this.loggingService.error('UserService: Failed to suspend user account', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
   }
 
   /**
-   * Get user statistics
-   * @param requestId
+   * Get comprehensive user statistics
+   * @param requestId - Request identifier
+   * @returns User statistics with detailed metrics
    */
   async getUserStatistics(requestId: string): Promise<UserStatistics> {
-    this.loggingService.info('Getting user statistics', { requestId });
+    this.loggingService.info('Getting comprehensive user statistics', { requestId });
 
     try {
-      // In a real implementation, you would aggregate statistics from the database
-      // For now, we'll return basic statistics
-      const allUsers = await this.userRepo.findAll(1, 1000, requestId);
+      const allUsers = await this.userRepo.findAll(1, 10000, requestId);
+      const users = allUsers.users;
+
+      const basicStats = calculateBasicStatistics(users, allUsers.total);
+      const timeBasedStats = calculateTimeBasedStatistics(users);
+      const securityStats = calculateSecurityStatistics(users);
+      const detailedStats = calculateDetailedStatistics(users);
 
       const statistics: UserStatistics = {
-        totalUsers: allUsers.total,
-        activeUsers: allUsers.users.filter(u => u.status === UserStatus.ACTIVE).length,
-        inactiveUsers: allUsers.users.filter(u => u.status === UserStatus.INACTIVE).length,
-        suspendedUsers: allUsers.users.filter(u => u.status === UserStatus.SUSPENDED).length,
-        lockedUsers: allUsers.users.filter(u => u.status === UserStatus.LOCKED).length,
-        verifiedUsers: allUsers.users.filter(u => u.emailVerificationStatus === 'verified').length,
-        unverifiedUsers: allUsers.users.filter(u => u.emailVerificationStatus === 'unverified')
-          .length,
-        usersByRole: this.countUsersByRole(allUsers.users),
-        usersByStatus: this.countUsersByStatus(allUsers.users),
-        recentUsers: allUsers.users.filter(u => {
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return u.createdAt >= thirtyDaysAgo;
-        }).length,
-        activeUsersLast30Days: allUsers.users.filter(u => {
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return u.lastLoginAt && u.lastLoginAt >= thirtyDaysAgo;
-        }).length,
+        ...basicStats,
+        ...timeBasedStats,
+        ...securityStats,
+        ...detailedStats,
       };
 
-      this.loggingService.info('User statistics retrieved successfully', { requestId, statistics });
+      this.loggingService.info('Comprehensive user statistics retrieved successfully', {
+        requestId,
+        statistics: {
+          totalUsers: statistics.totalUsers,
+          activeUsers: statistics.activeUsers,
+          verifiedUsers: statistics.verifiedUsers,
+          recentRegistrations: statistics.recentRegistrations,
+        },
+      });
 
       return statistics;
     } catch (error) {
       this.loggingService.error('Failed to get user statistics', {
         requestId,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -961,28 +1007,10 @@ export class UserService implements IUserService {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // Validate email
-      if (userData.email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userData.email)) {
-          errors.push('Invalid email format');
-        }
-      }
-
-      // Validate role
-      if (userData.role && !Object.values(UserRole).includes(userData.role)) {
-        errors.push('Invalid user role');
-      }
-
-      // Validate status
-      if (userData.status && !Object.values(UserStatus).includes(userData.status)) {
-        errors.push('Invalid user status');
-      }
-
-      // Validate password hash
-      if (userData.passwordHash && userData.passwordHash.length < 8) {
-        errors.push('Password hash must be at least 8 characters long');
-      }
+      this.validateUserEmail(userData, errors);
+      this.validateUserRole(userData, errors);
+      this.validateUserStatus(userData, errors);
+      this.validatePasswordHash(userData, errors);
 
       const result: ValidationResult = {
         isValid: errors.length === 0,
@@ -994,8 +1022,50 @@ export class UserService implements IUserService {
 
       return result;
     } catch (error) {
-      this.loggingService.error('User data validation failed', { requestId, error: error.message });
+      this.loggingService.error('User data validation failed', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       throw error;
+    }
+  }
+
+  /**
+   * Validate user email
+   */
+  private validateUserEmail(userData: Partial<User>, errors: string[]): void {
+    if (userData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        errors.push('Invalid email format');
+      }
+    }
+  }
+
+  /**
+   * Validate user role
+   */
+  private validateUserRole(userData: Partial<User>, errors: string[]): void {
+    if (userData.role && !Object.values(UserRole).includes(userData.role)) {
+      errors.push('Invalid user role');
+    }
+  }
+
+  /**
+   * Validate user status
+   */
+  private validateUserStatus(userData: Partial<User>, errors: string[]): void {
+    if (userData.status && !Object.values(UserStatus).includes(userData.status)) {
+      errors.push('Invalid user status');
+    }
+  }
+
+  /**
+   * Validate password hash
+   */
+  private validatePasswordHash(userData: Partial<User>, errors: string[]): void {
+    if (userData.passwordHash && userData.passwordHash.length < 8) {
+      errors.push('Password hash must be at least 8 characters long');
     }
   }
 
@@ -1025,56 +1095,45 @@ export class UserService implements IUserService {
         return false;
       }
 
-      // Super admin can modify anyone
-      if (admin.role === UserRole.SUPER_ADMIN) {
-        return true;
-      }
-
-      // Admin can modify users but not other admins or super admins
-      if (admin.role === UserRole.ADMIN) {
-        return user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN;
-      }
-
-      // Regular users cannot modify other users
-      return false;
+      return this.checkModificationPermissions(admin.role, user.role);
     } catch (error) {
       this.loggingService.error('Failed to check user modification permissions', {
         requestId,
         userId,
         adminId,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return false;
     }
   }
 
   /**
+   * Check modification permissions based on admin and user roles
+   * @param adminRole - Admin's role
+   * @param userRole - User's role to be modified
+   * @returns True if modification is allowed
+   */
+  private checkModificationPermissions(adminRole: UserRole, userRole: UserRole): boolean {
+    if (adminRole === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+
+    if (adminRole === UserRole.ADMIN) {
+      return userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN;
+    }
+
+    return false;
+  }
+
+  /**
    * Count users by role
    * @param users
    */
-  private countUsersByRole(users: User[]): Record<string, number> {
-    const counts: Record<string, number> = {};
-
-    for (const user of users) {
-      counts[user.role] = (counts[user.role] || 0) + 1;
-    }
-
-    return counts;
-  }
 
   /**
    * Count users by status
    * @param users
    */
-  private countUsersByStatus(users: User[]): Record<string, number> {
-    const counts: Record<string, number> = {};
-
-    for (const user of users) {
-      counts[user.status] = (counts[user.status] || 0) + 1;
-    }
-
-    return counts;
-  }
 
   /**
    * Create user profile
@@ -1092,9 +1151,9 @@ export class UserService implements IUserService {
     try {
       const profile = this.userProfileRepository.create({
         userId,
-        firstName: createUserDto.firstName,
-        lastName: createUserDto.lastName,
-        displayName: createUserDto.displayName,
+        firstName: createUserDto.firstName || '',
+        lastName: createUserDto.lastName || '',
+        displayName: createUserDto.displayName || '',
       });
 
       const savedProfile = await this.userProfileRepository.save(profile);
@@ -1109,6 +1168,138 @@ export class UserService implements IUserService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
+    }
+  }
+
+  /**
+   * Change user status
+   * @param id - User ID
+   * @param status - New status
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when change is complete
+   */
+  async changeStatus(id: string, status: UserStatus, requestId: string): Promise<User> {
+    this.loggingService.info('Changing user status', { requestId, userId: id, status });
+
+    try {
+      const user = await this.getUserById(id, requestId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      user.status = status;
+      const updatedUser = await this.userRepository.save(user);
+
+      this.loggingService.info('User status changed successfully', {
+        requestId,
+        userId: id,
+        status,
+      });
+
+      return updatedUser;
+    } catch (error) {
+      this.loggingService.error('Failed to change user status', {
+        requestId,
+        userId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Change user role
+   * @param id - User ID
+   * @param role - New role
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving when change is complete
+   */
+  async changeRole(id: string, role: UserRole, requestId: string): Promise<User> {
+    this.loggingService.info('Changing user role', { requestId, userId: id, role });
+
+    try {
+      const user = await this.getUserById(id, requestId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      user.role = role;
+      const updatedUser = await this.userRepository.save(user);
+
+      this.loggingService.info('User role changed successfully', {
+        requestId,
+        userId: id,
+        role,
+      });
+
+      return updatedUser;
+    } catch (error) {
+      this.loggingService.error('Failed to change user role', {
+        requestId,
+        userId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if user exists
+   * @param id - User ID
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving to boolean
+   */
+  async userExists(id: string, requestId: string): Promise<boolean> {
+    this.loggingService.debug('Checking if user exists', { requestId, userId: id });
+
+    try {
+      const user = await this.getUserById(id, requestId);
+      const exists = user !== null;
+
+      this.loggingService.debug('User existence check completed', {
+        requestId,
+        userId: id,
+        exists,
+      });
+
+      return exists;
+    } catch (error) {
+      this.loggingService.error('Failed to check user existence', {
+        requestId,
+        userId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if email is available
+   * @param email - Email to check
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving to boolean
+   */
+  async isEmailAvailable(email: string, requestId: string): Promise<boolean> {
+    this.loggingService.debug('Checking if email is available', { requestId, email });
+
+    try {
+      const exists = await this.emailExists(email, requestId);
+      const available = !exists;
+
+      this.loggingService.debug('Email availability check completed', {
+        requestId,
+        email,
+        available,
+      });
+
+      return available;
+    } catch (error) {
+      this.loggingService.error('Failed to check email availability', {
+        requestId,
+        email,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
     }
   }
 }

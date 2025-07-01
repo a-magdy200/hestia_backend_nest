@@ -214,8 +214,7 @@ export const profileHandlers = [
       filteredProfiles = filteredProfiles.filter(
         profile =>
           profile.firstName.toLowerCase().includes(search.toLowerCase()) ||
-          profile.lastName.toLowerCase().includes(search.toLowerCase()) ||
-          profile.email.toLowerCase().includes(search.toLowerCase()),
+          profile.lastName.toLowerCase().includes(search.toLowerCase()),
       );
     }
 
@@ -423,8 +422,7 @@ export const profileHandlers = [
       filteredProfiles = filteredProfiles.filter(
         profile =>
           profile.firstName.toLowerCase().includes(search.toLowerCase()) ||
-          profile.lastName.toLowerCase().includes(search.toLowerCase()) ||
-          profile.bio.toLowerCase().includes(search.toLowerCase()),
+          profile.lastName.toLowerCase().includes(search.toLowerCase()),
       );
     }
 

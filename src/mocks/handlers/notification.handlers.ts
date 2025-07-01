@@ -600,7 +600,7 @@ export const notificationHandlers = [
    */
   http.post('/notifications/templates', async ({ request }) => {
     try {
-      const body = await request.json();
+      const body = await request.json() as any;
       const { name, type, subject, body: templateBody, variables } = body;
 
       // Validate required fields
@@ -652,7 +652,7 @@ export const notificationHandlers = [
   http.put('/notifications/templates/:id', async ({ params, request }) => {
     try {
       const { id } = params;
-      const body = await request.json();
+      const body = await request.json() as any;
       const template = mockNotificationData.getTemplateById(id as string);
 
       if (!template) {

@@ -50,7 +50,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to create user in database', {
         requestId,
         userData,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -81,7 +81,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to find user by ID in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -116,7 +116,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to find user by email in database', {
         requestId,
         email,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -148,7 +148,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to find users by tenant ID in database', {
         requestId,
         tenantId,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -180,7 +180,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to find users by role in database', {
         requestId,
         role,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -212,7 +212,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to find users by status in database', {
         requestId,
         status,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -258,7 +258,7 @@ export class UserRepository implements IUserRepository {
         requestId,
         page,
         limit,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -287,7 +287,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to search users in database', {
         requestId,
         criteria,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -317,7 +317,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to update user in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -353,7 +353,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to soft delete user in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -369,7 +369,7 @@ export class UserRepository implements IUserRepository {
 
     try {
       const result = await this.userRepository.delete(id);
-      const success = result.affected > 0;
+      const success = (result.affected ?? 0) > 0;
 
       this.loggingService.debug('User hard delete completed in database', {
         requestId,
@@ -382,7 +382,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to hard delete user in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -414,7 +414,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to check email existence in database', {
         requestId,
         email,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -448,7 +448,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to update user last login in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -484,7 +484,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to update user password in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -522,7 +522,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to mark user email as verified in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -533,7 +533,7 @@ export class UserRepository implements IUserRepository {
    * @param id
    * @param requestId
    */
-  async incrementFailedLoginAttempts(id: string, requestId: string): Promise<void> {
+  async incrementFailedLoginAttempts(id: string, requestId: string): Promise<User> {
     this.loggingService.debug('Incrementing failed login attempts for user', {
       requestId,
       userId: id,
@@ -548,13 +548,15 @@ export class UserRepository implements IUserRepository {
       const userMethods = new UserMethods(user);
       userMethods.incrementFailedLoginAttempts();
 
-      await this.userRepository.save(user);
+      const updatedUser = await this.userRepository.save(user);
 
       this.loggingService.debug('Failed login attempts incremented successfully', {
         requestId,
         userId: id,
-        failedAttempts: user.failedLoginAttempts,
+        failedAttempts: updatedUser.failedLoginAttempts,
       });
+
+      return updatedUser;
     } catch (error) {
       this.loggingService.error('Failed to increment login attempts', {
         requestId,
@@ -570,7 +572,7 @@ export class UserRepository implements IUserRepository {
    * @param id
    * @param requestId
    */
-  async resetFailedLoginAttempts(id: string, requestId: string): Promise<void> {
+  async resetFailedLoginAttempts(id: string, requestId: string): Promise<User> {
     this.loggingService.debug('Resetting failed login attempts for user', {
       requestId,
       userId: id,
@@ -585,12 +587,14 @@ export class UserRepository implements IUserRepository {
       const userMethods = new UserMethods(user);
       userMethods.resetFailedLoginAttempts();
 
-      await this.userRepository.save(user);
+      const updatedUser = await this.userRepository.save(user);
 
       this.loggingService.debug('Failed login attempts reset successfully', {
         requestId,
         userId: id,
       });
+
+      return updatedUser;
     } catch (error) {
       this.loggingService.error('Failed to reset login attempts', {
         requestId,
@@ -638,7 +642,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to lock user account in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -655,11 +659,8 @@ export class UserRepository implements IUserRepository {
     try {
       await this.userRepository.update(id, {
         status: UserStatus.ACTIVE,
-        lockedAt: null,
-        lockReason: null,
         isActive: true,
         failedLoginAttempts: 0,
-        lastFailedLoginAt: null,
       });
 
       const user = await this.findById(id, requestId);
@@ -677,7 +678,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to unlock user account in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -717,7 +718,7 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to change user status in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -753,27 +754,21 @@ export class UserRepository implements IUserRepository {
       this.loggingService.error('Failed to change user role in database', {
         requestId,
         userId: id,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
   }
 
   /**
-   * Create search query builder
-   * @param criteria
+   * Add basic search criteria to query builder
+   * @param queryBuilder - Query builder instance
+   * @param criteria - Search criteria
    */
-  private createSearchQueryBuilder(criteria: UserSearchCriteria): SelectQueryBuilder<User> {
-    const queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.profile', 'profile')
-      .where('user.isDeleted = :isDeleted', { isDeleted: false });
-
-    // Add search criteria
-    if (criteria.email) {
-      queryBuilder.andWhere('user.email ILIKE :email', { email: `%${criteria.email}%` });
-    }
-
+  private addBasicSearchCriteria(
+    queryBuilder: SelectQueryBuilder<User>,
+    criteria: UserSearchCriteria,
+  ): void {
     if (criteria.role) {
       queryBuilder.andWhere('user.role = :role', { role: criteria.role });
     }
@@ -785,13 +780,17 @@ export class UserRepository implements IUserRepository {
     if (criteria.tenantId) {
       queryBuilder.andWhere('user.tenantId = :tenantId', { tenantId: criteria.tenantId });
     }
+  }
 
-    if (criteria.emailVerified !== undefined) {
-      queryBuilder.andWhere('user.emailVerified = :emailVerified', {
-        emailVerified: criteria.emailVerified,
-      });
-    }
-
+  /**
+   * Add date range criteria to query builder
+   * @param queryBuilder - Query builder instance
+   * @param criteria - Search criteria
+   */
+  private addDateRangeCriteria(
+    queryBuilder: SelectQueryBuilder<User>,
+    criteria: UserSearchCriteria,
+  ): void {
     if (criteria.createdAfter) {
       queryBuilder.andWhere('user.createdAt >= :createdAfter', {
         createdAfter: criteria.createdAfter,
@@ -815,7 +814,17 @@ export class UserRepository implements IUserRepository {
         lastLoginBefore: criteria.lastLoginBefore,
       });
     }
+  }
 
+  /**
+   * Add sorting and pagination to query builder
+   * @param queryBuilder - Query builder instance
+   * @param criteria - Search criteria
+   */
+  private addSortingAndPagination(
+    queryBuilder: SelectQueryBuilder<User>,
+    criteria: UserSearchCriteria,
+  ): void {
     // Add sorting
     const sortField = criteria.sortBy || 'createdAt';
     const sortOrder = criteria.sortOrder || 'DESC';
@@ -826,6 +835,22 @@ export class UserRepository implements IUserRepository {
       const offset = (criteria.page - 1) * criteria.limit;
       queryBuilder.skip(offset).take(criteria.limit);
     }
+  }
+
+  /**
+   * Create search query builder
+   * @param criteria
+   */
+  private createSearchQueryBuilder(criteria: UserSearchCriteria): SelectQueryBuilder<User> {
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('user.isDeleted = :isDeleted', { isDeleted: false });
+
+    // Add search criteria
+    this.addBasicSearchCriteria(queryBuilder, criteria);
+    this.addDateRangeCriteria(queryBuilder, criteria);
+    this.addSortingAndPagination(queryBuilder, criteria);
 
     return queryBuilder;
   }

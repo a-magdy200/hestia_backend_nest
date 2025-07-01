@@ -48,9 +48,12 @@ export class GetAllUsersController {
     const sortBy = query.sortBy || 'createdAt';
     const sortOrder = (query.sortOrder || 'DESC') as 'ASC' | 'DESC';
     this.logGetAllUsersAttempt(page, limit, sortBy, sortOrder);
-    const users = await this.userService.searchUsers({ page, limit, sortBy, sortOrder }, '');
-    this.logGetAllUsersSuccess(users.length);
-    return this.createSuccessResponse({ users, total: users.length }, 'All users returned');
+    const result = await this.userService.searchUsers({ page, limit, sortBy, sortOrder }, '');
+    this.logGetAllUsersSuccess(result.users.length);
+    return this.createSuccessResponse(
+      { users: result.users, total: result.total },
+      'All users returned',
+    );
   }
 
   private logGetAllUsersAttempt(

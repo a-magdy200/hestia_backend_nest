@@ -14,29 +14,29 @@ import {
 import { validateProcessEnv } from './environment.validation';
 import { AppConfig, RateLimitConfig } from './interfaces/app.config.interface';
 import { AuthConfig } from './interfaces/auth.config.interface';
-import { CacheConfig } from './interfaces/cache.config.interface';
+import { CacheConfig, RedisConfig, MemoryConfig } from './interfaces/cache.config.interface';
 import { DatabaseConfig } from './interfaces/database.config.interface';
-import { EnvUtil } from './utils/env.util';
+import { getString, getNumber, getBoolean } from './utils/env.util';
 
 /**
  * Create application configuration
  * @returns Application configuration object
  */
 const createAppConfig = (): AppConfig => ({
-  environment: (EnvUtil.getString(EnvVar.NODE_ENV) as Environment) || Environment.DEVELOPMENT,
-  port: EnvUtil.getNumber(EnvVar.PORT, 3000),
-  host: EnvUtil.getString(EnvVar.HOST, 'localhost'),
-  name: EnvUtil.getString(EnvVar.APP_NAME, 'Hestia Backend'),
-  version: EnvUtil.getString(EnvVar.APP_VERSION, '1.0.0'),
-  description: EnvUtil.getString(EnvVar.APP_DESCRIPTION, 'Hestia Backend API'),
-  logLevel: (EnvUtil.getString(EnvVar.LOG_LEVEL) as LogLevel) || LogLevel.INFO,
-  enableSwagger: EnvUtil.getBoolean(EnvVar.ENABLE_SWAGGER, true),
-  enableMetrics: EnvUtil.getBoolean(EnvVar.ENABLE_METRICS, true),
-  enableCors: EnvUtil.getBoolean(EnvVar.ENABLE_CORS, true),
-  corsOrigin: EnvUtil.getString(EnvVar.CORS_ORIGIN, '*'),
-  globalPrefix: EnvUtil.getString(EnvVar.GLOBAL_PREFIX, 'api'),
-  timeout: EnvUtil.getNumber(EnvVar.TIMEOUT, 30000),
-  maxPayloadSize: EnvUtil.getString(EnvVar.MAX_PAYLOAD_SIZE, '10mb'),
+  environment: (getString(EnvVar.NODE_ENV) as Environment) || Environment.DEVELOPMENT,
+  port: getNumber(EnvVar.PORT, 3000),
+  host: getString(EnvVar.HOST, 'localhost'),
+  name: getString(EnvVar.APP_NAME, 'Hestia Backend'),
+  version: getString(EnvVar.APP_VERSION, '1.0.0'),
+  description: getString(EnvVar.APP_DESCRIPTION, 'Hestia Backend API'),
+  logLevel: (getString(EnvVar.LOG_LEVEL) as LogLevel) || LogLevel.INFO,
+  enableSwagger: getBoolean(EnvVar.ENABLE_SWAGGER, true),
+  enableMetrics: getBoolean(EnvVar.ENABLE_METRICS, true),
+  enableCors: getBoolean(EnvVar.ENABLE_CORS, true),
+  corsOrigin: getString(EnvVar.CORS_ORIGIN, '*'),
+  globalPrefix: getString(EnvVar.GLOBAL_PREFIX, 'api'),
+  timeout: getNumber(EnvVar.TIMEOUT, 30000),
+  maxPayloadSize: getString(EnvVar.MAX_PAYLOAD_SIZE, '10mb'),
 });
 
 /**
@@ -45,24 +45,24 @@ const createAppConfig = (): AppConfig => ({
  */
 const createDatabaseConfig = (): DatabaseConfig => {
   const config: DatabaseConfig = {
-    type: (EnvUtil.getString(EnvVar.DB_TYPE) as DatabaseType) || DatabaseType.POSTGRES,
-    host: EnvUtil.getString(EnvVar.DB_HOST, 'localhost'),
-    port: EnvUtil.getNumber(EnvVar.DB_PORT, 5432),
-    username: EnvUtil.getString(EnvVar.DB_USERNAME, 'postgres'),
-    password: EnvUtil.getString(EnvVar.DB_PASSWORD, ''),
-    database: EnvUtil.getString(EnvVar.DB_DATABASE, 'hestia'),
-    url: EnvUtil.getString(EnvVar.DATABASE_URL, ''),
-    ssl: EnvUtil.getBoolean(EnvVar.DB_SSL, false),
-    synchronize: EnvUtil.getString(EnvVar.NODE_ENV) === Environment.DEVELOPMENT,
-    logging: EnvUtil.getString(EnvVar.NODE_ENV) === Environment.DEVELOPMENT,
+    type: (getString(EnvVar.DB_TYPE) as DatabaseType) || DatabaseType.POSTGRES,
+    host: getString(EnvVar.DB_HOST, 'localhost'),
+    port: getNumber(EnvVar.DB_PORT, 5432),
+    username: getString(EnvVar.DB_USERNAME, 'postgres'),
+    password: getString(EnvVar.DB_PASSWORD, ''),
+    database: getString(EnvVar.DB_DATABASE, 'hestia'),
+    url: getString(EnvVar.DATABASE_URL, ''),
+    ssl: getBoolean(EnvVar.DB_SSL, false),
+    synchronize: getString(EnvVar.NODE_ENV) === Environment.DEVELOPMENT,
+    logging: getString(EnvVar.NODE_ENV) === Environment.DEVELOPMENT,
     entities: ['dist/**/*.entity{.ts,.js}'],
     migrations: ['dist/migrations/*{.ts,.js}'],
     subscribers: ['dist/subscribers/*{.ts,.js}'],
-    maxConnections: EnvUtil.getNumber(EnvVar.DB_MAX_CONNECTIONS, 10),
-    connectionTimeout: EnvUtil.getNumber(EnvVar.DB_CONNECTION_TIMEOUT, 60000),
-    acquireTimeout: EnvUtil.getNumber(EnvVar.DB_ACQUIRE_TIMEOUT, 60000),
-    timeout: EnvUtil.getNumber(EnvVar.DB_TIMEOUT, 30000),
-    poolSize: EnvUtil.getNumber(EnvVar.DB_POOL_SIZE, 10),
+    maxConnections: getNumber(EnvVar.DB_MAX_CONNECTIONS, 10),
+    connectionTimeout: getNumber(EnvVar.DB_CONNECTION_TIMEOUT, 60000),
+    acquireTimeout: getNumber(EnvVar.DB_ACQUIRE_TIMEOUT, 60000),
+    timeout: getNumber(EnvVar.DB_TIMEOUT, 30000),
+    poolSize: getNumber(EnvVar.DB_POOL_SIZE, 10),
   };
 
   return config;
@@ -72,17 +72,25 @@ const createDatabaseConfig = (): DatabaseConfig => {
  * Create OAuth providers configuration
  * @returns OAuth providers configuration object
  */
-const createOAuthProviders = () => ({
+const createOAuthProviders = (): Record<
+  string,
+  {
+    clientId: string;
+    clientSecret: string;
+    callbackUrl: string;
+    scope: string[];
+  }
+> => ({
   google: {
-    clientId: EnvUtil.getString(EnvVar.GOOGLE_CLIENT_ID, ''),
-    clientSecret: EnvUtil.getString(EnvVar.GOOGLE_CLIENT_SECRET, ''),
-    callbackUrl: EnvUtil.getString(EnvVar.GOOGLE_CALLBACK_URL, ''),
+    clientId: getString(EnvVar.GOOGLE_CLIENT_ID, ''),
+    clientSecret: getString(EnvVar.GOOGLE_CLIENT_SECRET, ''),
+    callbackUrl: getString(EnvVar.GOOGLE_CALLBACK_URL, ''),
     scope: ['email', 'profile'],
   },
   github: {
-    clientId: EnvUtil.getString(EnvVar.GITHUB_CLIENT_ID, ''),
-    clientSecret: EnvUtil.getString(EnvVar.GITHUB_CLIENT_SECRET, ''),
-    callbackUrl: EnvUtil.getString(EnvVar.GITHUB_CALLBACK_URL, ''),
+    clientId: getString(EnvVar.GITHUB_CLIENT_ID, ''),
+    clientSecret: getString(EnvVar.GITHUB_CLIENT_SECRET, ''),
+    callbackUrl: getString(EnvVar.GITHUB_CALLBACK_URL, ''),
     scope: ['user:email'],
   },
 });
@@ -92,14 +100,14 @@ const createOAuthProviders = () => ({
  * @returns Authentication configuration object
  */
 const createAuthConfig = (): AuthConfig => ({
-  strategy: (EnvUtil.getString(EnvVar.AUTH_STRATEGY) as AuthStrategy) || AuthStrategy.JWT,
-  jwtSecret: EnvUtil.getString(EnvVar.JWT_SECRET, 'your-secret-key'),
-  jwtExpiresIn: EnvUtil.getString(EnvVar.JWT_EXPIRES_IN, '1h'),
-  jwtRefreshExpiresIn: EnvUtil.getString(EnvVar.JWT_REFRESH_EXPIRES_IN, '7d'),
-  saltRounds: EnvUtil.getNumber(EnvVar.SALT_ROUNDS, 10),
-  sessionMaxAge: EnvUtil.getNumber(EnvVar.SESSION_MAX_AGE, 86400000), // 24 hours
-  sessionSecret: EnvUtil.getString(EnvVar.SESSION_SECRET, 'session-secret'),
-  apiKeyHeader: EnvUtil.getString(EnvVar.API_KEY_HEADER, 'x-api-key'),
+  strategy: (getString(EnvVar.AUTH_STRATEGY) as AuthStrategy) || AuthStrategy.JWT,
+  jwtSecret: getString(EnvVar.JWT_SECRET, 'your-secret-key'),
+  jwtExpiresIn: getString(EnvVar.JWT_EXPIRES_IN, '1h'),
+  jwtRefreshExpiresIn: getString(EnvVar.JWT_REFRESH_EXPIRES_IN, '7d'),
+  saltRounds: getNumber(EnvVar.SALT_ROUNDS, 10),
+  sessionMaxAge: getNumber(EnvVar.SESSION_MAX_AGE, 86400000), // 24 hours
+  sessionSecret: getString(EnvVar.SESSION_SECRET, 'session-secret'),
+  apiKeyHeader: getString(EnvVar.API_KEY_HEADER, 'x-api-key'),
   oauthProviders: createOAuthProviders(),
 });
 
@@ -107,39 +115,39 @@ const createAuthConfig = (): AuthConfig => ({
  * Create Redis configuration
  * @returns Redis configuration object
  */
-const createRedisConfig = () => ({
-  host: EnvUtil.getString(EnvVar.REDIS_HOST, 'localhost'),
-  port: EnvUtil.getNumber(EnvVar.REDIS_PORT, 6379),
-  db: EnvUtil.getNumber(EnvVar.REDIS_DB, 0),
-  password: EnvUtil.getString(EnvVar.REDIS_PASSWORD, ''),
-  keyPrefix: EnvUtil.getString(EnvVar.REDIS_KEY_PREFIX, 'hestia:'),
-  retryDelayOnFailover: EnvUtil.getNumber(EnvVar.REDIS_RETRY_DELAY, 1000),
-  maxRetriesPerRequest: EnvUtil.getNumber(EnvVar.REDIS_MAX_RETRIES, 3),
-  enableReadyCheck: EnvUtil.getBoolean(EnvVar.REDIS_ENABLE_READY_CHECK, true),
-  maxMemoryPolicy: EnvUtil.getString(EnvVar.REDIS_MAX_MEMORY_POLICY, 'allkeys-lru'),
-  lazyConnect: EnvUtil.getBoolean(EnvVar.REDIS_LAZY_CONNECT, false),
-  keepAlive: EnvUtil.getNumber(EnvVar.REDIS_KEEP_ALIVE, 30000),
-  family: EnvUtil.getNumber(EnvVar.REDIS_FAMILY, 4),
-  noDelay: EnvUtil.getBoolean(EnvVar.REDIS_NO_DELAY, true),
-  connectionName: EnvUtil.getString(EnvVar.REDIS_CONNECTION_NAME, ''),
-  readOnly: EnvUtil.getBoolean(EnvVar.REDIS_READ_ONLY, false),
-  stringNumbers: EnvUtil.getBoolean(EnvVar.REDIS_STRING_NUMBERS, false),
-  maxLoadingTimeout: EnvUtil.getNumber(EnvVar.REDIS_MAX_LOADING_TIMEOUT, 10000),
-  autoResubscribe: EnvUtil.getBoolean(EnvVar.REDIS_AUTO_RESUBSCRIBE, true),
-  autoResendUnfulfilledCommands: EnvUtil.getBoolean(EnvVar.REDIS_AUTO_RESEND_COMMANDS, true),
+const createRedisConfig = (): RedisConfig => ({
+  host: getString(EnvVar.REDIS_HOST, 'localhost'),
+  port: getNumber(EnvVar.REDIS_PORT, 6379),
+  db: getNumber(EnvVar.REDIS_DB, 0),
+  password: getString(EnvVar.REDIS_PASSWORD, ''),
+  keyPrefix: getString(EnvVar.REDIS_KEY_PREFIX, 'hestia:'),
+  retryDelayOnFailover: getNumber(EnvVar.REDIS_RETRY_DELAY, 1000),
+  maxRetriesPerRequest: getNumber(EnvVar.REDIS_MAX_RETRIES, 3),
+  enableReadyCheck: getBoolean(EnvVar.REDIS_ENABLE_READY_CHECK, true),
+  maxMemoryPolicy: getString(EnvVar.REDIS_MAX_MEMORY_POLICY, 'allkeys-lru'),
+  lazyConnect: getBoolean(EnvVar.REDIS_LAZY_CONNECT, false),
+  keepAlive: getNumber(EnvVar.REDIS_KEEP_ALIVE, 30000),
+  family: getNumber(EnvVar.REDIS_FAMILY, 4),
+  noDelay: getBoolean(EnvVar.REDIS_NO_DELAY, true),
+  connectionName: getString(EnvVar.REDIS_CONNECTION_NAME, ''),
+  readOnly: getBoolean(EnvVar.REDIS_READ_ONLY, false),
+  stringNumbers: getBoolean(EnvVar.REDIS_STRING_NUMBERS, false),
+  maxLoadingTimeout: getNumber(EnvVar.REDIS_MAX_LOADING_TIMEOUT, 10000),
+  autoResubscribe: getBoolean(EnvVar.REDIS_AUTO_RESUBSCRIBE, true),
+  autoResendUnfulfilledCommands: getBoolean(EnvVar.REDIS_AUTO_RESEND_COMMANDS, true),
 });
 
 /**
- * Create memory cache configuration
+ * Create Memory cache configuration
  * @returns Memory cache configuration object
  */
-const createMemoryCacheConfig = () => ({
-  maxSize: EnvUtil.getNumber(EnvVar.MEMORY_CACHE_MAX_SIZE, 1000),
-  ttl: EnvUtil.getNumber(EnvVar.MEMORY_CACHE_TTL, 300000), // 5 minutes
-  updateAgeOnGet: EnvUtil.getBoolean(EnvVar.MEMORY_CACHE_UPDATE_AGE, false),
-  allowStale: EnvUtil.getBoolean(EnvVar.MEMORY_CACHE_ALLOW_STALE, false),
-  noDisposeOnSet: EnvUtil.getBoolean(EnvVar.MEMORY_CACHE_NO_DISPOSE, false),
-  dispose: () => {
+const createMemoryCacheConfig = (): MemoryConfig => ({
+  maxSize: getNumber(EnvVar.MEMORY_CACHE_MAX_SIZE, 1000),
+  ttl: getNumber(EnvVar.MEMORY_CACHE_TTL, 300000), // 5 minutes
+  updateAgeOnGet: getBoolean(EnvVar.MEMORY_CACHE_UPDATE_AGE, false),
+  allowStale: getBoolean(EnvVar.MEMORY_CACHE_ALLOW_STALE, false),
+  noDisposeOnSet: getBoolean(EnvVar.MEMORY_CACHE_NO_DISPOSE, false),
+  dispose: (): void => {
     // Custom dispose function for memory cache cleanup
     // This is a no-op implementation
   },
@@ -150,9 +158,9 @@ const createMemoryCacheConfig = () => ({
  * @returns Cache configuration object
  */
 const createCacheConfig = (): CacheConfig => ({
-  type: (EnvUtil.getString(EnvVar.CACHE_TYPE) as CacheType) || CacheType.REDIS,
-  ttl: EnvUtil.getNumber(EnvVar.CACHE_TTL, 300000), // 5 minutes
-  maxItems: EnvUtil.getNumber(EnvVar.CACHE_MAX_ITEMS, 1000),
+  type: (getString(EnvVar.CACHE_TYPE) as CacheType) || CacheType.REDIS,
+  ttl: getNumber(EnvVar.CACHE_TTL, 300000), // 5 minutes
+  maxItems: getNumber(EnvVar.CACHE_MAX_ITEMS, 1000),
   redis: createRedisConfig(),
   memory: createMemoryCacheConfig(),
 });
@@ -162,16 +170,15 @@ const createCacheConfig = (): CacheConfig => ({
  * @returns Rate limiting configuration object
  */
 const createRateLimitConfig = (): RateLimitConfig => ({
-  enabled: EnvUtil.getBoolean(EnvVar.RATE_LIMIT_ENABLED, true),
+  enabled: getBoolean(EnvVar.RATE_LIMIT_ENABLED, true),
   strategy:
-    (EnvUtil.getString(EnvVar.RATE_LIMIT_STRATEGY) as RateLimitStrategy) ||
-    RateLimitStrategy.FIXED_WINDOW,
-  ttl: EnvUtil.getNumber(EnvVar.RATE_LIMIT_TTL, 60000), // 1 minute
-  limit: EnvUtil.getNumber(EnvVar.RATE_LIMIT_LIMIT, 100),
-  skipSuccessfulRequests: EnvUtil.getBoolean(EnvVar.RATE_LIMIT_SKIP_SUCCESS, false),
-  skipFailedRequests: EnvUtil.getBoolean(EnvVar.RATE_LIMIT_SKIP_FAILED, false),
-  keyGenerator: EnvUtil.getString(EnvVar.RATE_LIMIT_KEY_GENERATOR, 'ip'),
-  handler: EnvUtil.getString(EnvVar.RATE_LIMIT_HANDLER, 'default'),
+    (getString(EnvVar.RATE_LIMIT_STRATEGY) as RateLimitStrategy) || RateLimitStrategy.FIXED_WINDOW,
+  ttl: getNumber(EnvVar.RATE_LIMIT_TTL, 60000), // 1 minute
+  limit: getNumber(EnvVar.RATE_LIMIT_LIMIT, 100),
+  skipSuccessfulRequests: getBoolean(EnvVar.RATE_LIMIT_SKIP_SUCCESS, false),
+  skipFailedRequests: getBoolean(EnvVar.RATE_LIMIT_SKIP_FAILED, false),
+  keyGenerator: getString(EnvVar.RATE_LIMIT_KEY_GENERATOR, 'ip'),
+  handler: getString(EnvVar.RATE_LIMIT_HANDLER, 'default'),
 });
 
 /**

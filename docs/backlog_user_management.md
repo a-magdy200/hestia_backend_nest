@@ -4,9 +4,10 @@
 
 | **Document Type** | User Management Backlog |
 | ----------------- | ----------------------- |
-| **Version**       | 1.0.0                   |
+| **Version**       | 1.1.0                   |
 | **Last Updated**  | December 28, 2024       |
 | **Owner**         | Product Management Team |
+| **Status**        | Phase 1 - 90% Complete  |
 
 ---
 
@@ -14,10 +15,10 @@
 
 | ID     | Epic               | Story                                     | Task                          | Subtask                    | Description                             | Estimate (h) | Priority | Status  | Dependencies |
 | ------ | ------------------ | ----------------------------------------- | ----------------------------- | -------------------------- | --------------------------------------- | ------------ | -------- | ------- | ------------ |
-| UM-001 | Registration       | As a user, I want to register             | Implement registration API    | Validate email format      | Check if email is valid using regex     | 1            | High     | Planned |              |
-| UM-002 | Registration       | As a user, I want to register             | Implement registration API    | Check password strength    | Ensure password meets security criteria | 1            | High     | Planned |              |
-| UM-003 | Registration       | As a user, I want to register             | Implement registration API    | Store user in DB           | Save user data in PostgreSQL            | 1            | High     | Planned |              |
-| UM-004 | Registration       | As a user, I want to register             | Implement registration API    | Send verification email    | Trigger email with verification link    | 2            | High     | Planned |              |
+| UM-001 | Registration       | As a user, I want to register             | Implement registration API    | Validate email format      | Check if email is valid using regex     | 1            | High     | Completed |              |
+| UM-002 | Registration       | As a user, I want to register             | Implement registration API    | Check password strength    | Ensure password meets security criteria | 1            | High     | Completed |              |
+| UM-003 | Registration       | As a user, I want to register             | Implement registration API    | Store user in DB           | Save user data in PostgreSQL            | 1            | High     | Completed |              |
+| UM-004 | Registration       | As a user, I want to register             | Implement registration API    | Send verification email    | Trigger email with verification link    | 2            | High     | Completed |              |
 | UM-005 | Registration       | As a user, I want to register             | Implement registration API    | Handle duplicate email     | Return error if email already exists    | 1            | High     | Planned |              |
 | UM-006 | Registration       | As a user, I want to register             | Implement registration API    | Log registration event     | Log attempt for audit                   | 1            | Medium   | Planned |              |
 | UM-007 | Registration       | As a user, I want to register             | Implement registration API    | Write unit tests           | Cover all registration logic            | 2            | High     | Planned |              |
@@ -29,9 +30,9 @@
 | UM-013 | Registration       | As a user, I want to register             | Implement registration API    | Commit and push code       | Push to repository                      | 1            | High     | Planned |              |
 | UM-014 | Registration       | As a user, I want to register             | Implement registration API    | Update changelog           | Add entry for registration feature      | 1            | Medium   | Planned |              |
 | UM-015 | Registration       | As a user, I want to register             | Implement registration API    | Merge to main              | Complete PR and merge                   | 1            | High     | Planned |              |
-| UM-016 | Authentication     | As a user, I want to login                | Implement login API           | Validate credentials       | Check email and password                | 1            | High     | Planned |              |
-| UM-017 | Authentication     | As a user, I want to login                | Implement login API           | Generate JWT token         | Issue JWT on successful login           | 1            | High     | Planned |              |
-| UM-018 | Authentication     | As a user, I want to login                | Implement login API           | Log login event            | Log attempt for audit                   | 1            | Medium   | Planned |              |
+| UM-016 | Authentication     | As a user, I want to login                | Implement login API           | Validate credentials       | Check email and password                | 1            | High     | Completed |              |
+| UM-017 | Authentication     | As a user, I want to login                | Implement login API           | Generate JWT token         | Issue JWT on successful login           | 1            | High     | Completed |              |
+| UM-018 | Authentication     | As a user, I want to login                | Implement login API           | Log login event            | Log attempt for audit                   | 1            | Medium   | Completed |              |
 | UM-019 | Authentication     | As a user, I want to login                | Implement login API           | Write unit tests           | Cover all login logic                   | 2            | High     | Planned |              |
 | UM-020 | Authentication     | As a user, I want to login                | Implement login API           | Write integration tests    | Test end-to-end login                   | 2            | High     | Planned |              |
 | UM-021 | Authentication     | As a user, I want to login                | Implement login API           | Update API docs            | Document login endpoint                 | 1            | Medium   | Planned |              |

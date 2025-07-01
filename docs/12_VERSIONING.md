@@ -1,15 +1,13 @@
-# Hestia Enterprise SaaS Platform - Versioning & Release Management
+# Versioning
 
 ## 📋 Document Information
 
-| **Document Type** | Versioning & Release Policy                          |
-| ----------------- | ---------------------------------------------------- |
-| **Version**       | 2.0.0                                                |
-| **Last Updated**  | December 28, 2024                                    |
-| **Next Review**   | February 28, 2025                                    |
-| **Owner**         | Release Management Team                              |
-| **Stakeholders**  | Development Team, DevOps Team, QA Team, Product Team |
-| **Status**        | Active - Enforced                                    |
+| **Document Type** | Versioning Policy |
+| ----------------- | ---------------- |
+| **Version**       | 1.1.0            |
+| **Last Updated**  | December 28, 2024 |
+| **Owner**         | Release Management Team |
+| **Status**        | Phase 1 - 90% Complete |
 
 ---
 
@@ -131,8 +129,6 @@ gitGraph
 | ------- | ---------- | ---------------------------------- |
 | 1.0.0   | 2024-12-28 | Initial documentation and planning |
 | ...     | ...        | ...                                |
-
----
 
 ---
 

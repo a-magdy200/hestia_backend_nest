@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder, Not, IsNull } from 'typeorm';
 
 import { UserProfileMethods } from '../database/entities/user-profile-methods.entity';
 import { UserProfile } from '../database/entities/user-profile.entity';
-import { CreateProfileDto } from '../dto/user/create-profile.dto';
-import { ProfileSearchDto } from '../dto/user/profile-search.dto';
-import { UpdateProfileDto } from '../dto/user/update-profile.dto';
+import { CreateProfileDto } from '../dto/user-profile/create-profile.dto';
+import { ProfileSearchDto } from '../dto/user-profile/profile-search.dto';
+import { UpdateProfileDto } from '../dto/user-profile/update-profile.dto';
 import { UserProfileVisibility } from '../interfaces/enums/user.enum';
-import { IUserProfileRepository } from '../interfaces/repositories/user-profile-repository.interface';
-import { IUserProfileService } from '../interfaces/services/user-profile-service.interface';
+import {
+  IUserProfileService,
+  ValidationResult,
+} from '../interfaces/services/user-profile-service.interface';
+import { ProfileStatistics } from '../interfaces/repositories/user-profile-search.interface';
 
 import { LoggingService } from './logging.service';
 
@@ -28,7 +31,6 @@ export class UserProfileService implements IUserProfileService {
   constructor(
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
-    private readonly userProfileRepo: IUserProfileRepository,
     private readonly loggingService: LoggingService,
   ) {}
 
@@ -46,39 +48,9 @@ export class UserProfileService implements IUserProfileService {
     this.loggingService.debug('UserProfileService: Creating profile', { requestId, userId });
 
     try {
-      // Check if profile already exists
-      const existingProfile = await this.userProfileRepository.findOne({
-        where: { userId },
-      });
+      await this.checkExistingProfile(userId, requestId);
 
-      if (existingProfile) {
-        this.loggingService.warn('UserProfileService: Profile already exists', {
-          requestId,
-          userId,
-        });
-        throw new BadRequestException('Profile already exists for this user');
-      }
-
-      // Create profile data
-      const profileData = {
-        userId,
-        firstName: createProfileDto.firstName,
-        lastName: createProfileDto.lastName,
-        displayName: createProfileDto.displayName,
-        bio: createProfileDto.bio,
-        phoneNumber: createProfileDto.phoneNumber,
-        dateOfBirth: createProfileDto.dateOfBirth,
-        location: createProfileDto.location,
-        timezone: createProfileDto.timezone,
-        language: createProfileDto.language,
-        avatarUrl: createProfileDto.avatarUrl,
-        coverImageUrl: createProfileDto.coverImageUrl,
-        visibility: createProfileDto.visibility || UserProfileVisibility.PUBLIC,
-        preferences: createProfileDto.preferences,
-        socialLinks: createProfileDto.socialLinks,
-        isPublicProfile: createProfileDto.isPublicProfile || false,
-      };
-
+      const profileData = this.buildProfileData(userId, createProfileDto);
       const profile = this.userProfileRepository.create(profileData);
       const savedProfile = await this.userProfileRepository.save(profile);
 
@@ -97,6 +69,85 @@ export class UserProfileService implements IUserProfileService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Check if profile already exists
+   */
+  private async checkExistingProfile(userId: string, requestId: string): Promise<void> {
+    const existingProfile = await this.userProfileRepository.findOne({
+      where: { userId },
+    });
+
+    if (existingProfile) {
+      this.loggingService.warn('UserProfileService: Profile already exists', {
+        requestId,
+        userId,
+      });
+      throw new BadRequestException('Profile already exists for this user');
+    }
+  }
+
+  /**
+   * Build profile data from DTO
+   */
+  private buildProfileData(
+    userId: string,
+    createProfileDto: CreateProfileDto,
+  ): Partial<UserProfile> {
+    const profileData: Record<string, unknown> = {
+      userId,
+      isDeleted: false,
+    };
+
+    this.addProfileFields(profileData, createProfileDto);
+    this.addDefaultValues(profileData, createProfileDto);
+
+    return profileData as Partial<UserProfile>;
+  }
+
+  /**
+   * Add profile fields from DTO
+   */
+  private addProfileFields(
+    profileData: Record<string, unknown>,
+    createProfileDto: CreateProfileDto,
+  ): void {
+    const fieldMappings = [
+      { dtoField: 'firstName', profileField: 'firstName' },
+      { dtoField: 'lastName', profileField: 'lastName' },
+      { dtoField: 'displayName', profileField: 'displayName' },
+      { dtoField: 'bio', profileField: 'bio' },
+      { dtoField: 'phoneNumber', profileField: 'phoneNumber' },
+      { dtoField: 'location', profileField: 'location' },
+      { dtoField: 'timezone', profileField: 'timezone' },
+      { dtoField: 'language', profileField: 'language' },
+      { dtoField: 'avatarUrl', profileField: 'avatarUrl' },
+      { dtoField: 'coverImageUrl', profileField: 'coverImageUrl' },
+    ];
+
+    fieldMappings.forEach(({ dtoField, profileField }) => {
+      const value = createProfileDto[dtoField as keyof CreateProfileDto];
+      if (value !== undefined) {
+        profileData[profileField] = value;
+      }
+    });
+
+    // Handle date of birth separately
+    if (createProfileDto.dateOfBirth !== undefined) {
+      profileData['dateOfBirth'] = new Date(createProfileDto.dateOfBirth);
+    }
+  }
+
+  /**
+   * Add default values for profile fields
+   */
+  private addDefaultValues(
+    profileData: Record<string, unknown>,
+    createProfileDto: CreateProfileDto,
+  ): void {
+    profileData['visibility'] = createProfileDto.visibility ?? UserProfileVisibility.PRIVATE;
+    profileData['isPublicProfile'] = createProfileDto.isPublicProfile ?? false;
   }
 
   /**
@@ -182,69 +233,7 @@ export class UserProfileService implements IUserProfileService {
         throw new NotFoundException('Profile not found');
       }
 
-      // Update profile fields
-      if (updateProfileDto.firstName !== undefined) {
-        profile.firstName = updateProfileDto.firstName;
-      }
-
-      if (updateProfileDto.lastName !== undefined) {
-        profile.lastName = updateProfileDto.lastName;
-      }
-
-      if (updateProfileDto.displayName !== undefined) {
-        profile.displayName = updateProfileDto.displayName;
-      }
-
-      if (updateProfileDto.bio !== undefined) {
-        profile.bio = updateProfileDto.bio;
-      }
-
-      if (updateProfileDto.phoneNumber !== undefined) {
-        profile.phoneNumber = updateProfileDto.phoneNumber;
-      }
-
-      if (updateProfileDto.dateOfBirth !== undefined) {
-        profile.dateOfBirth = updateProfileDto.dateOfBirth;
-      }
-
-      if (updateProfileDto.location !== undefined) {
-        profile.location = updateProfileDto.location;
-      }
-
-      if (updateProfileDto.timezone !== undefined) {
-        profile.timezone = updateProfileDto.timezone;
-      }
-
-      if (updateProfileDto.language !== undefined) {
-        profile.language = updateProfileDto.language;
-      }
-
-      if (updateProfileDto.avatarUrl !== undefined) {
-        profile.avatarUrl = updateProfileDto.avatarUrl;
-      }
-
-      if (updateProfileDto.coverImageUrl !== undefined) {
-        profile.coverImageUrl = updateProfileDto.coverImageUrl;
-      }
-
-      if (updateProfileDto.visibility !== undefined) {
-        profile.visibility = updateProfileDto.visibility;
-      }
-
-      if (updateProfileDto.isPublicProfile !== undefined) {
-        profile.isPublicProfile = updateProfileDto.isPublicProfile;
-      }
-
-      // Update preferences if provided
-      if (updateProfileDto.preferences) {
-        profile.preferences = { ...profile.preferences, ...updateProfileDto.preferences };
-      }
-
-      // Update social links if provided
-      if (updateProfileDto.socialLinks) {
-        profile.socialLinks = { ...profile.socialLinks, ...updateProfileDto.socialLinks };
-      }
-
+      this.updateProfileFields(profile, updateProfileDto);
       const updatedProfile = await this.userProfileRepository.save(profile);
 
       this.loggingService.debug('UserProfileService: Profile updated successfully', {
@@ -262,6 +251,30 @@ export class UserProfileService implements IUserProfileService {
       });
       throw error;
     }
+  }
+
+  private updateProfileFields(profile: UserProfile, updateProfileDto: UpdateProfileDto): void {
+    const fieldUpdates = [
+      { field: 'firstName', value: updateProfileDto.firstName },
+      { field: 'lastName', value: updateProfileDto.lastName },
+      { field: 'displayName', value: updateProfileDto.displayName },
+      { field: 'bio', value: updateProfileDto.bio },
+      { field: 'phoneNumber', value: updateProfileDto.phoneNumber },
+      { field: 'dateOfBirth', value: updateProfileDto.dateOfBirth },
+      { field: 'location', value: updateProfileDto.location },
+      { field: 'timezone', value: updateProfileDto.timezone },
+      { field: 'language', value: updateProfileDto.language },
+      { field: 'avatarUrl', value: updateProfileDto.avatarUrl },
+      { field: 'coverImageUrl', value: updateProfileDto.coverImageUrl },
+      { field: 'visibility', value: updateProfileDto.visibility },
+      { field: 'isPublicProfile', value: updateProfileDto.isPublicProfile },
+    ];
+
+    fieldUpdates.forEach(({ field, value }) => {
+      if (value !== undefined) {
+        (profile as any)[field] = value;
+      }
+    });
   }
 
   /**
@@ -310,70 +323,17 @@ export class UserProfileService implements IUserProfileService {
     });
 
     try {
-      const queryBuilder = this.userProfileRepository
-        .createQueryBuilder('profile')
-        .where('profile.isDeleted = :isDeleted', { isDeleted: false });
-
-      // Apply search filters
-      if (searchDto.firstName) {
-        queryBuilder.andWhere('profile.firstName ILIKE :firstName', {
-          firstName: `%${searchDto.firstName}%`,
-        });
-      }
-
-      if (searchDto.lastName) {
-        queryBuilder.andWhere('profile.lastName ILIKE :lastName', {
-          lastName: `%${searchDto.lastName}%`,
-        });
-      }
-
-      if (searchDto.displayName) {
-        queryBuilder.andWhere('profile.displayName ILIKE :displayName', {
-          displayName: `%${searchDto.displayName}%`,
-        });
-      }
-
-      if (searchDto.location) {
-        queryBuilder.andWhere('profile.location ILIKE :location', {
-          location: `%${searchDto.location}%`,
-        });
-      }
-
-      if (searchDto.language) {
-        queryBuilder.andWhere('profile.language = :language', { language: searchDto.language });
-      }
-
-      if (searchDto.visibility) {
-        queryBuilder.andWhere('profile.visibility = :visibility', {
-          visibility: searchDto.visibility,
-        });
-      }
-
-      if (searchDto.isPublicProfile !== undefined) {
-        queryBuilder.andWhere('profile.isPublicProfile = :isPublicProfile', {
-          isPublicProfile: searchDto.isPublicProfile,
-        });
-      }
-
-      // Apply sorting
-      const sortField = searchDto.sortBy || 'createdAt';
-      const sortOrder = searchDto.sortOrder || 'DESC';
-      queryBuilder.orderBy(`profile.${sortField}`, sortOrder as 'ASC' | 'DESC');
-
-      // Apply pagination
-      const page = searchDto.page || 1;
-      const limit = searchDto.limit || 10;
-      const offset = (page - 1) * limit;
-
-      queryBuilder.skip(offset).take(limit);
+      const queryBuilder = this.buildSearchQueryBuilder();
+      this.applySearchFilters(queryBuilder, searchDto);
+      this.applySortingAndPagination(queryBuilder, searchDto);
 
       const profiles = await queryBuilder.getMany();
 
       this.loggingService.debug('UserProfileService: Profile search completed', {
         requestId,
         resultCount: profiles.length,
-        page,
-        limit,
+        page: searchDto.page || 1,
+        limit: searchDto.limit || 10,
       });
 
       return profiles;
@@ -384,6 +344,57 @@ export class UserProfileService implements IUserProfileService {
       });
       throw error;
     }
+  }
+
+  private buildSearchQueryBuilder(): SelectQueryBuilder<UserProfile> {
+    return this.userProfileRepository
+      .createQueryBuilder('profile')
+      .where('profile.isDeleted = :isDeleted', { isDeleted: false });
+  }
+
+  private applySearchFilters(
+    queryBuilder: SelectQueryBuilder<UserProfile>,
+    searchDto: ProfileSearchDto,
+  ): void {
+    const filters = [
+      { field: 'firstName', value: searchDto.firstName, operator: 'ILIKE' },
+      { field: 'lastName', value: searchDto.lastName, operator: 'ILIKE' },
+      { field: 'displayName', value: searchDto.displayName, operator: 'ILIKE' },
+      { field: 'location', value: searchDto.location, operator: 'ILIKE' },
+      { field: 'language', value: searchDto.language, operator: '=' },
+      { field: 'visibility', value: searchDto.visibility, operator: '=' },
+    ];
+
+    filters.forEach(({ field, value, operator }) => {
+      if (value !== undefined) {
+        const paramName = field;
+        const paramValue = operator === 'ILIKE' ? `%${value}%` : value;
+        queryBuilder.andWhere(`profile.${field} ${operator} :${paramName}`, {
+          [paramName]: paramValue,
+        });
+      }
+    });
+
+    if (searchDto.isPublicProfile !== undefined) {
+      queryBuilder.andWhere('profile.isPublicProfile = :isPublicProfile', {
+        isPublicProfile: searchDto.isPublicProfile,
+      });
+    }
+  }
+
+  private applySortingAndPagination(
+    queryBuilder: SelectQueryBuilder<UserProfile>,
+    searchDto: ProfileSearchDto,
+  ): void {
+    const sortField = searchDto.sortBy || 'createdAt';
+    const sortOrder = searchDto.sortOrder || 'DESC';
+    queryBuilder.orderBy(`profile.${sortField}`, sortOrder as 'ASC' | 'DESC');
+
+    const page = searchDto.page || 1;
+    const limit = searchDto.limit || 10;
+    const offset = (page - 1) * limit;
+
+    queryBuilder.skip(offset).take(limit);
   }
 
   /**
@@ -545,35 +556,462 @@ export class UserProfileService implements IUserProfileService {
     isComplete: boolean,
     requestId: string,
   ): Promise<UserProfile[]> {
-    this.loggingService.debug('Getting profiles by completion status', {
+    this.loggingService.debug('UserProfileService: Getting profiles by completion status', {
       requestId,
       isComplete,
     });
 
     try {
       const profiles = await this.userProfileRepository.find({
-        where: { tenantId: 'default', isDeleted: false },
+        where: {
+          isDeleted: false,
+        },
+        order: { createdAt: 'DESC' },
       });
 
-      const filteredProfiles = profiles.filter(profile => {
-        const profileMethods = new UserProfileMethods(profile);
-        return profileMethods.isComplete() === isComplete;
-      });
-
-      this.loggingService.debug('Profiles filtered by completion status', {
-        requestId,
-        isComplete,
-        count: filteredProfiles.length,
-      });
+      // Filter profiles based on completion status
+      const filteredProfiles: UserProfile[] = [];
+      for (const profile of profiles) {
+        const complete = await this.isProfileComplete(profile.userId, requestId);
+        if (complete === isComplete) {
+          filteredProfiles.push(profile);
+        }
+      }
 
       return filteredProfiles;
     } catch (error) {
-      this.loggingService.error('Failed to get profiles by completion status', {
+      this.loggingService.error('UserProfileService: Failed to get profiles by completion status', {
         requestId,
-        isComplete,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
+  }
+
+  /**
+   * Check profile completeness
+   * @param userId - User ID
+   * @param requestId - Request ID for tracking
+   * @returns Promise resolving to completeness percentage
+   */
+  async checkProfileCompleteness(userId: string, requestId: string): Promise<number> {
+    this.loggingService.debug('UserProfileService: Checking profile completeness percentage', {
+      requestId,
+      userId,
+    });
+
+    try {
+      const profile = await this.getProfileByUserId(userId, requestId);
+      if (!profile) {
+        return 0;
+      }
+
+      const profileMethods = new UserProfileMethods(profile);
+      return profileMethods.isComplete() ? 100 : 50; // Simplified completion calculation
+    } catch (error) {
+      this.loggingService.error('UserProfileService: Failed to check profile completeness', {
+        requestId,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return 0;
+    }
+  }
+
+  /**
+   * Get profiles by visibility
+   * @param visibility - Profile visibility level
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to array of profiles
+   */
+  async getProfilesByVisibility(
+    visibility: UserProfileVisibility,
+    requestId: string,
+  ): Promise<UserProfile[]> {
+    this.loggingService.debug('UserProfileService: Getting profiles by visibility', {
+      requestId,
+      visibility,
+    });
+
+    try {
+      const profiles = await this.userProfileRepository.find({
+        where: {
+          visibility,
+          isDeleted: false,
+        },
+        order: { createdAt: 'DESC' },
+      });
+
+      this.loggingService.debug('UserProfileService: Profiles by visibility retrieved', {
+        requestId,
+        visibility,
+        count: profiles.length,
+      });
+
+      return profiles;
+    } catch (error) {
+      this.loggingService.error('UserProfileService: Failed to get profiles by visibility', {
+        requestId,
+        visibility,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get profile statistics
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to profile statistics
+   */
+  async getProfileStatistics(requestId: string): Promise<ProfileStatistics> {
+    this.loggingService.debug('UserProfileService: Getting profile statistics', { requestId });
+
+    try {
+      const totalProfiles = await this.userProfileRepository.count({
+        where: { isDeleted: false },
+      });
+
+      const publicProfiles = await this.userProfileRepository.count({
+        where: {
+          isDeleted: false,
+          visibility: UserProfileVisibility.PUBLIC,
+        },
+      });
+
+      const privateProfiles = await this.userProfileRepository.count({
+        where: {
+          isDeleted: false,
+          visibility: UserProfileVisibility.PRIVATE,
+        },
+      });
+
+      const profilesWithAvatars = await this.userProfileRepository.count({
+        where: {
+          isDeleted: false,
+          avatarUrl: Not(IsNull()),
+        },
+      });
+
+      const statistics: ProfileStatistics = {
+        totalProfiles,
+        publicProfiles,
+        privateProfiles,
+        completeProfiles: profilesWithAvatars,
+        incompleteProfiles: totalProfiles - profilesWithAvatars,
+        recentProfiles: 0, // TODO: Implement recent profiles calculation
+      };
+
+      this.loggingService.debug('UserProfileService: Profile statistics retrieved', {
+        requestId,
+        statistics,
+      });
+
+      return statistics;
+    } catch (error) {
+      this.loggingService.error('UserProfileService: Failed to get profile statistics', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Validate profile data
+   * @param profileData - Profile data to validate
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to validation result
+   */
+  async validateProfileData(
+    profileData: Partial<UserProfile>,
+    requestId: string,
+  ): Promise<ValidationResult> {
+    this.loggingService.debug('UserProfileService: Validating profile data', { requestId });
+
+    try {
+      const errors: string[] = [];
+      const warnings: string[] = [];
+
+      this.validateRequiredFields(profileData, errors);
+      this.validateFieldFormats(profileData, errors, warnings);
+      this.validateFieldLengths(profileData, errors);
+
+      const isValid = errors.length === 0;
+
+      this.loggingService.debug('UserProfileService: Profile data validation completed', {
+        requestId,
+        isValid,
+        errorCount: errors.length,
+        warningCount: warnings.length,
+      });
+
+      return { isValid, errors, warnings };
+    } catch (error) {
+      this.loggingService.error('UserProfileService: Failed to validate profile data', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return {
+        isValid: false,
+        errors: ['Validation failed due to system error'],
+        warnings: [],
+      };
+    }
+  }
+
+  /**
+   * Validate required fields
+   */
+  private validateRequiredFields(profileData: Partial<UserProfile>, errors: string[]): void {
+    if (!profileData.userId) {
+      errors.push('User ID is required');
+    }
+  }
+
+  /**
+   * Validate field formats
+   */
+  private validateFieldFormats(
+    profileData: Partial<UserProfile>,
+    errors: string[],
+    warnings: string[],
+  ): void {
+    if (profileData.phoneNumber && !this.isValidPhoneNumber(profileData.phoneNumber)) {
+      errors.push('Invalid phone number format');
+    }
+
+    if (profileData.dateOfBirth) {
+      this.validateDateOfBirth(profileData.dateOfBirth, errors, warnings);
+    }
+  }
+
+  /**
+   * Validate date of birth
+   */
+  private validateDateOfBirth(dateOfBirth: Date, errors: string[], warnings: string[]): void {
+    const dob = new Date(dateOfBirth);
+    const now = new Date();
+
+    if (dob > now) {
+      errors.push('Date of birth cannot be in the future');
+    }
+
+    if (now.getFullYear() - dob.getFullYear() > 120) {
+      warnings.push('Date of birth seems unrealistic');
+    }
+  }
+
+  /**
+   * Validate field lengths
+   */
+  private validateFieldLengths(profileData: Partial<UserProfile>, errors: string[]): void {
+    if (profileData.bio && profileData.bio.length > 500) {
+      errors.push('Bio cannot exceed 500 characters');
+    }
+
+    if (profileData.displayName && profileData.displayName.length > 50) {
+      errors.push('Display name cannot exceed 50 characters');
+    }
+  }
+
+  /**
+   * Check if profile can be viewed by user
+   * @param profileUserId - Profile owner user ID
+   * @param requestingUserId - Requesting user ID
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to boolean indicating if profile can be viewed
+   */
+  async canViewProfile(
+    profileUserId: string,
+    requestingUserId: string,
+    requestId: string,
+  ): Promise<boolean> {
+    this.loggingService.debug('UserProfileService: Checking profile view permissions', {
+      requestId,
+      profileUserId,
+      requestingUserId,
+    });
+
+    try {
+      // Users can always view their own profile
+      if (profileUserId === requestingUserId) {
+        return true;
+      }
+
+      const profile = await this.getProfileByUserId(profileUserId, requestId);
+      if (!profile) {
+        return false;
+      }
+
+      // Check visibility settings
+      if (profile.visibility === UserProfileVisibility.PUBLIC) {
+        return true;
+      }
+
+      if (profile.visibility === UserProfileVisibility.PRIVATE) {
+        return false;
+      }
+
+      // For other visibility levels, implement additional logic as needed
+      return false;
+    } catch (error) {
+      this.loggingService.error('UserProfileService: Failed to check profile view permissions', {
+        requestId,
+        profileUserId,
+        requestingUserId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if profile can be modified by user
+   * @param profileUserId - Profile owner user ID
+   * @param modifyingUserId - Modifying user ID
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to boolean indicating if profile can be modified
+   */
+  async canModifyProfile(
+    profileUserId: string,
+    modifyingUserId: string,
+    requestId: string,
+  ): Promise<boolean> {
+    this.loggingService.debug('UserProfileService: Checking profile modification permissions', {
+      requestId,
+      profileUserId,
+      modifyingUserId,
+    });
+
+    try {
+      // Users can always modify their own profile
+      if (profileUserId === modifyingUserId) {
+        return true;
+      }
+
+      // TODO: Implement admin/moderation permissions
+      // For now, only profile owners can modify their profiles
+      return false;
+    } catch (error) {
+      this.loggingService.error(
+        'UserProfileService: Failed to check profile modification permissions',
+        {
+          requestId,
+          profileUserId,
+          modifyingUserId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Get profile completion percentage
+   * @param userId - User ID
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to completion percentage (0-100)
+   */
+  async getProfileCompletionPercentage(userId: string, requestId: string): Promise<number> {
+    return this.checkProfileCompleteness(userId, requestId);
+  }
+
+  /**
+   * Get profile suggestions for completion
+   * @param userId - User ID
+   * @param requestId - Request ID for logging
+   * @returns Promise resolving to array of suggestion messages
+   */
+  async getProfileCompletionSuggestions(userId: string, requestId: string): Promise<string[]> {
+    this.loggingService.debug('UserProfileService: Getting profile completion suggestions', {
+      requestId,
+      userId,
+    });
+
+    try {
+      const profile = await this.getProfileByUserId(userId, requestId);
+      if (!profile) {
+        return ['Create your profile to get started'];
+      }
+
+      const suggestions = this.generateProfileSuggestions(profile);
+
+      this.loggingService.debug('UserProfileService: Profile completion suggestions generated', {
+        requestId,
+        userId,
+        suggestionCount: suggestions.length,
+      });
+
+      return suggestions;
+    } catch (error) {
+      this.loggingService.error(
+        'UserProfileService: Failed to get profile completion suggestions',
+        {
+          requestId,
+          userId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      );
+      return ['Unable to generate suggestions at this time'];
+    }
+  }
+
+  /**
+   * Generate profile completion suggestions based on missing fields
+   * @param profile - User profile to analyze
+   * @returns Array of suggestion messages
+   */
+  private generateProfileSuggestions(profile: UserProfile): string[] {
+    const suggestions: string[] = [];
+    const suggestionMap = [
+      {
+        condition: !profile.firstName || !profile.lastName,
+        message: 'Add your full name to personalize your profile',
+      },
+      {
+        condition: !profile.bio,
+        message: 'Add a bio to tell others about yourself',
+      },
+      {
+        condition: !profile.avatarUrl,
+        message: 'Upload a profile picture to make your profile more personal',
+      },
+      {
+        condition: !profile.location,
+        message: 'Add your location to connect with people nearby',
+      },
+      {
+        condition: !profile.phoneNumber,
+        message: 'Add your phone number for better account security',
+      },
+      {
+        condition: !profile.dateOfBirth,
+        message: 'Add your date of birth for personalized experiences',
+      },
+      {
+        condition: !profile.socialLinks || Object.keys(profile.socialLinks).length === 0,
+        message: 'Add social media links to connect with others',
+      },
+    ];
+
+    suggestionMap.forEach(({ condition, message }) => {
+      if (condition) {
+        suggestions.push(message);
+      }
+    });
+
+    return suggestions;
+  }
+
+  /**
+   * Validate phone number format
+   * @param phoneNumber - Phone number to validate
+   * @returns boolean indicating if phone number is valid
+   */
+  private isValidPhoneNumber(phoneNumber: string): boolean {
+    // Basic phone number validation - can be enhanced based on requirements
+    const phoneRegex = /^\+?[\d\s\-()]{10,}$/;
+    return phoneRegex.test(phoneNumber);
   }
 }

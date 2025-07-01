@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { UserRole, Permission } from '../../interfaces/enums/user.enum';
 import { IUserRepository } from '../../interfaces/repositories/user-repository.interface';
 import { LoggingService } from '../logging.service';
+import { User } from '../../database/entities/user.entity';
 
 /**
  * Permission service for authorization
@@ -189,184 +190,7 @@ export class PermissionService {
   private getPermissionsByRole(role: UserRole, requestId: string): Permission[] {
     this.loggingService.debug('Getting permissions by role', { requestId, role });
 
-    const rolePermissions: Record<UserRole, Permission[]> = {
-      [UserRole.SUPER_ADMIN]: [
-        Permission.READ_USERS,
-        Permission.CREATE_USERS,
-        Permission.UPDATE_USERS,
-        Permission.DELETE_USERS,
-        Permission.MANAGE_USER_ROLES,
-        Permission.SUSPEND_USERS,
-        Permission.UNLOCK_USERS,
-        Permission.READ_PROFILES,
-        Permission.UPDATE_PROFILES,
-        Permission.DELETE_PROFILES,
-        Permission.READ_RECIPES,
-        Permission.CREATE_RECIPES,
-        Permission.UPDATE_RECIPES,
-        Permission.DELETE_RECIPES,
-        Permission.PUBLISH_RECIPES,
-        Permission.APPROVE_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.APPROVE_INGREDIENTS,
-        Permission.READ_SHOPPING_LISTS,
-        Permission.CREATE_SHOPPING_LISTS,
-        Permission.UPDATE_SHOPPING_LISTS,
-        Permission.DELETE_SHOPPING_LISTS,
-        Permission.MANAGE_SYSTEM_SETTINGS,
-        Permission.VIEW_ANALYTICS,
-        Permission.MANAGE_TENANTS,
-        Permission.MANAGE_BILLING,
-        Permission.VIEW_AUDIT_LOGS,
-        Permission.MANAGE_API_KEYS,
-        Permission.MODERATE_CONTENT,
-        Permission.APPROVE_CONTENT,
-        Permission.REJECT_CONTENT,
-        Permission.FLAG_CONTENT,
-        Permission.SEND_NOTIFICATIONS,
-        Permission.MANAGE_NOTIFICATIONS,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-        Permission.ADVANCED_SEARCH,
-        Permission.EXPORT_DATA,
-      ],
-      [UserRole.ADMIN]: [
-        Permission.READ_USERS,
-        Permission.CREATE_USERS,
-        Permission.UPDATE_USERS,
-        Permission.DELETE_USERS,
-        Permission.MANAGE_USER_ROLES,
-        Permission.SUSPEND_USERS,
-        Permission.UNLOCK_USERS,
-        Permission.READ_PROFILES,
-        Permission.UPDATE_PROFILES,
-        Permission.DELETE_PROFILES,
-        Permission.READ_RECIPES,
-        Permission.CREATE_RECIPES,
-        Permission.UPDATE_RECIPES,
-        Permission.DELETE_RECIPES,
-        Permission.PUBLISH_RECIPES,
-        Permission.APPROVE_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.APPROVE_INGREDIENTS,
-        Permission.READ_SHOPPING_LISTS,
-        Permission.CREATE_SHOPPING_LISTS,
-        Permission.UPDATE_SHOPPING_LISTS,
-        Permission.DELETE_SHOPPING_LISTS,
-        Permission.VIEW_ANALYTICS,
-        Permission.MANAGE_TENANTS,
-        Permission.VIEW_AUDIT_LOGS,
-        Permission.MODERATE_CONTENT,
-        Permission.APPROVE_CONTENT,
-        Permission.REJECT_CONTENT,
-        Permission.FLAG_CONTENT,
-        Permission.SEND_NOTIFICATIONS,
-        Permission.MANAGE_NOTIFICATIONS,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-        Permission.ADVANCED_SEARCH,
-        Permission.EXPORT_DATA,
-      ],
-      [UserRole.MODERATOR]: [
-        Permission.READ_USERS,
-        Permission.READ_PROFILES,
-        Permission.UPDATE_PROFILES,
-        Permission.READ_RECIPES,
-        Permission.CREATE_RECIPES,
-        Permission.UPDATE_RECIPES,
-        Permission.DELETE_RECIPES,
-        Permission.APPROVE_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.APPROVE_INGREDIENTS,
-        Permission.READ_SHOPPING_LISTS,
-        Permission.CREATE_SHOPPING_LISTS,
-        Permission.UPDATE_SHOPPING_LISTS,
-        Permission.DELETE_SHOPPING_LISTS,
-        Permission.VIEW_AUDIT_LOGS,
-        Permission.MODERATE_CONTENT,
-        Permission.APPROVE_CONTENT,
-        Permission.REJECT_CONTENT,
-        Permission.FLAG_CONTENT,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-      ],
-      [UserRole.USER]: [
-        Permission.READ_OWN_PROFILE,
-        Permission.UPDATE_OWN_PROFILE,
-        Permission.READ_OWN_RECIPES,
-        Permission.CREATE_OWN_RECIPES,
-        Permission.UPDATE_OWN_RECIPES,
-        Permission.DELETE_OWN_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.READ_OWN_SHOPPING_LISTS,
-        Permission.CREATE_OWN_SHOPPING_LISTS,
-        Permission.UPDATE_OWN_SHOPPING_LISTS,
-        Permission.DELETE_OWN_SHOPPING_LISTS,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-        Permission.FLAG_CONTENT,
-      ],
-      [UserRole.GUEST]: [
-        Permission.READ_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.SEARCH_CONTENT,
-      ],
-      [UserRole.BETA_TESTER]: [
-        Permission.READ_OWN_PROFILE,
-        Permission.UPDATE_OWN_PROFILE,
-        Permission.READ_OWN_RECIPES,
-        Permission.CREATE_OWN_RECIPES,
-        Permission.UPDATE_OWN_RECIPES,
-        Permission.DELETE_OWN_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.READ_OWN_SHOPPING_LISTS,
-        Permission.CREATE_OWN_SHOPPING_LISTS,
-        Permission.UPDATE_OWN_SHOPPING_LISTS,
-        Permission.DELETE_OWN_SHOPPING_LISTS,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-        Permission.ADVANCED_SEARCH,
-        Permission.FLAG_CONTENT,
-      ],
-      [UserRole.PREMIUM_USER]: [
-        Permission.READ_OWN_PROFILE,
-        Permission.UPDATE_OWN_PROFILE,
-        Permission.READ_OWN_RECIPES,
-        Permission.CREATE_OWN_RECIPES,
-        Permission.UPDATE_OWN_RECIPES,
-        Permission.DELETE_OWN_RECIPES,
-        Permission.READ_INGREDIENTS,
-        Permission.CREATE_INGREDIENTS,
-        Permission.UPDATE_INGREDIENTS,
-        Permission.DELETE_INGREDIENTS,
-        Permission.READ_OWN_SHOPPING_LISTS,
-        Permission.CREATE_OWN_SHOPPING_LISTS,
-        Permission.UPDATE_OWN_SHOPPING_LISTS,
-        Permission.DELETE_OWN_SHOPPING_LISTS,
-        Permission.READ_NOTIFICATIONS,
-        Permission.SEARCH_CONTENT,
-        Permission.ADVANCED_SEARCH,
-        Permission.EXPORT_DATA,
-        Permission.FLAG_CONTENT,
-      ],
-    };
-
-    const permissions = rolePermissions[role] || [];
+    const permissions = this.getRolePermissions(role);
 
     this.loggingService.debug('Permissions by role retrieved', {
       requestId,
@@ -375,6 +199,235 @@ export class PermissionService {
     });
 
     return permissions;
+  }
+
+  /**
+   * Get permissions for a specific role
+   */
+  private getRolePermissions(role: UserRole): Permission[] {
+    const rolePermissions: Record<UserRole, Permission[]> = {
+      [UserRole.SUPER_ADMIN]: this.getSuperAdminPermissions(),
+      [UserRole.ADMIN]: this.getAdminPermissions(),
+      [UserRole.MODERATOR]: this.getModeratorPermissions(),
+      [UserRole.USER]: this.getBasicUserPermissions(),
+      [UserRole.GUEST]: this.getGuestPermissions(),
+      [UserRole.BETA_TESTER]: this.getBetaTesterPermissions(),
+      [UserRole.PREMIUM_USER]: this.getPremiumUserPermissions(),
+    };
+
+    return rolePermissions[role] || [];
+  }
+
+  /**
+   * Get super admin permissions
+   */
+  private getSuperAdminPermissions(): Permission[] {
+    return [
+      Permission.READ_USERS,
+      Permission.CREATE_USERS,
+      Permission.UPDATE_USERS,
+      Permission.DELETE_USERS,
+      Permission.MANAGE_USER_ROLES,
+      Permission.SUSPEND_USERS,
+      Permission.UNLOCK_USERS,
+      Permission.READ_PROFILES,
+      Permission.UPDATE_PROFILES,
+      Permission.DELETE_PROFILES,
+      Permission.READ_RECIPES,
+      Permission.CREATE_RECIPES,
+      Permission.UPDATE_RECIPES,
+      Permission.DELETE_RECIPES,
+      Permission.PUBLISH_RECIPES,
+      Permission.APPROVE_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.APPROVE_INGREDIENTS,
+      Permission.READ_SHOPPING_LISTS,
+      Permission.CREATE_SHOPPING_LISTS,
+      Permission.UPDATE_SHOPPING_LISTS,
+      Permission.DELETE_SHOPPING_LISTS,
+      Permission.MANAGE_SYSTEM_SETTINGS,
+      Permission.VIEW_ANALYTICS,
+      Permission.MANAGE_TENANTS,
+      Permission.MANAGE_BILLING,
+      Permission.VIEW_AUDIT_LOGS,
+      Permission.MANAGE_API_KEYS,
+      Permission.MODERATE_CONTENT,
+      Permission.APPROVE_CONTENT,
+      Permission.REJECT_CONTENT,
+      Permission.FLAG_CONTENT,
+      Permission.SEND_NOTIFICATIONS,
+      Permission.MANAGE_NOTIFICATIONS,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+      Permission.ADVANCED_SEARCH,
+      Permission.EXPORT_DATA,
+    ];
+  }
+
+  /**
+   * Get admin permissions
+   */
+  private getAdminPermissions(): Permission[] {
+    return [
+      Permission.READ_USERS,
+      Permission.CREATE_USERS,
+      Permission.UPDATE_USERS,
+      Permission.DELETE_USERS,
+      Permission.MANAGE_USER_ROLES,
+      Permission.SUSPEND_USERS,
+      Permission.UNLOCK_USERS,
+      Permission.READ_PROFILES,
+      Permission.UPDATE_PROFILES,
+      Permission.DELETE_PROFILES,
+      Permission.READ_RECIPES,
+      Permission.CREATE_RECIPES,
+      Permission.UPDATE_RECIPES,
+      Permission.DELETE_RECIPES,
+      Permission.PUBLISH_RECIPES,
+      Permission.APPROVE_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.APPROVE_INGREDIENTS,
+      Permission.READ_SHOPPING_LISTS,
+      Permission.CREATE_SHOPPING_LISTS,
+      Permission.UPDATE_SHOPPING_LISTS,
+      Permission.DELETE_SHOPPING_LISTS,
+      Permission.VIEW_ANALYTICS,
+      Permission.MANAGE_TENANTS,
+      Permission.VIEW_AUDIT_LOGS,
+      Permission.MODERATE_CONTENT,
+      Permission.APPROVE_CONTENT,
+      Permission.REJECT_CONTENT,
+      Permission.FLAG_CONTENT,
+      Permission.SEND_NOTIFICATIONS,
+      Permission.MANAGE_NOTIFICATIONS,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+      Permission.ADVANCED_SEARCH,
+      Permission.EXPORT_DATA,
+    ];
+  }
+
+  /**
+   * Get moderator permissions
+   */
+  private getModeratorPermissions(): Permission[] {
+    return [
+      Permission.READ_USERS,
+      Permission.READ_PROFILES,
+      Permission.UPDATE_PROFILES,
+      Permission.READ_RECIPES,
+      Permission.CREATE_RECIPES,
+      Permission.UPDATE_RECIPES,
+      Permission.DELETE_RECIPES,
+      Permission.APPROVE_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.APPROVE_INGREDIENTS,
+      Permission.READ_SHOPPING_LISTS,
+      Permission.CREATE_SHOPPING_LISTS,
+      Permission.UPDATE_SHOPPING_LISTS,
+      Permission.DELETE_SHOPPING_LISTS,
+      Permission.VIEW_AUDIT_LOGS,
+      Permission.MODERATE_CONTENT,
+      Permission.APPROVE_CONTENT,
+      Permission.REJECT_CONTENT,
+      Permission.FLAG_CONTENT,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+    ];
+  }
+
+  /**
+   * Get basic user permissions
+   */
+  private getBasicUserPermissions(): Permission[] {
+    return [
+      Permission.READ_OWN_PROFILE,
+      Permission.UPDATE_OWN_PROFILE,
+      Permission.READ_OWN_RECIPES,
+      Permission.CREATE_OWN_RECIPES,
+      Permission.UPDATE_OWN_RECIPES,
+      Permission.DELETE_OWN_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.READ_OWN_SHOPPING_LISTS,
+      Permission.CREATE_OWN_SHOPPING_LISTS,
+      Permission.UPDATE_OWN_SHOPPING_LISTS,
+      Permission.DELETE_OWN_SHOPPING_LISTS,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+      Permission.FLAG_CONTENT,
+    ];
+  }
+
+  /**
+   * Get guest permissions
+   */
+  private getGuestPermissions(): Permission[] {
+    return [Permission.READ_RECIPES, Permission.READ_INGREDIENTS, Permission.SEARCH_CONTENT];
+  }
+
+  /**
+   * Get beta tester permissions
+   */
+  private getBetaTesterPermissions(): Permission[] {
+    return [
+      Permission.READ_OWN_PROFILE,
+      Permission.UPDATE_OWN_PROFILE,
+      Permission.READ_OWN_RECIPES,
+      Permission.CREATE_OWN_RECIPES,
+      Permission.UPDATE_OWN_RECIPES,
+      Permission.DELETE_OWN_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.READ_OWN_SHOPPING_LISTS,
+      Permission.CREATE_OWN_SHOPPING_LISTS,
+      Permission.UPDATE_OWN_SHOPPING_LISTS,
+      Permission.DELETE_OWN_SHOPPING_LISTS,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+      Permission.ADVANCED_SEARCH,
+      Permission.FLAG_CONTENT,
+    ];
+  }
+
+  /**
+   * Get premium user permissions
+   */
+  private getPremiumUserPermissions(): Permission[] {
+    return [
+      Permission.READ_OWN_PROFILE,
+      Permission.UPDATE_OWN_PROFILE,
+      Permission.READ_OWN_RECIPES,
+      Permission.CREATE_OWN_RECIPES,
+      Permission.UPDATE_OWN_RECIPES,
+      Permission.DELETE_OWN_RECIPES,
+      Permission.READ_INGREDIENTS,
+      Permission.CREATE_INGREDIENTS,
+      Permission.UPDATE_INGREDIENTS,
+      Permission.DELETE_INGREDIENTS,
+      Permission.READ_OWN_SHOPPING_LISTS,
+      Permission.CREATE_OWN_SHOPPING_LISTS,
+      Permission.UPDATE_OWN_SHOPPING_LISTS,
+      Permission.DELETE_OWN_SHOPPING_LISTS,
+      Permission.READ_NOTIFICATIONS,
+      Permission.SEARCH_CONTENT,
+      Permission.ADVANCED_SEARCH,
+      Permission.EXPORT_DATA,
+      Permission.FLAG_CONTENT,
+    ];
   }
 
   /**
@@ -402,67 +455,132 @@ export class PermissionService {
     });
 
     try {
-      const user = await this.userRepository.findById(userId, requestId);
+      const user = await this.getUserForAccessCheck(userId, requestId);
       if (!user) {
-        this.loggingService.warn('Resource access check failed: User not found', {
-          requestId,
-          userId,
-        });
         return false;
       }
 
-      // Super admin and admin can access all resources
-      if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
-        this.loggingService.debug('Resource access granted for admin role', {
-          requestId,
-          userId,
-          role: user.role,
-        });
+      if (this.isAdminUser(user)) {
+        this.logAdminAccessGranted(requestId, userId, user.role);
         return true;
       }
 
-      // Check resource ownership
-      const isOwner = await this.isResourceOwner(userId, resourceType, resourceId, requestId);
-      if (isOwner) {
-        this.loggingService.debug('Resource access granted for owner', {
-          requestId,
-          userId,
-          resourceType,
-          resourceId,
-        });
+      if (await this.isResourceOwner(userId, resourceType, resourceId, requestId)) {
+        this.logOwnerAccessGranted(requestId, userId, resourceType, resourceId);
         return true;
       }
 
-      // Check permissions for the action
-      const requiredPermission = this.mapActionToPermission(action, resourceType);
-      if (requiredPermission) {
-        const hasPermission = await this.hasPermission(userId, requiredPermission, requestId);
-
-        this.loggingService.debug('Resource access check completed', {
-          requestId,
-          userId,
-          resourceType,
-          resourceId,
-          action,
-          requiredPermission,
-          hasPermission,
-        });
-
-        return hasPermission;
-      }
-
-      return false;
-    } catch (error) {
-      this.loggingService.error('Resource access check failed', {
-        requestId,
+      return await this.checkPermissionBasedAccess(
         userId,
         resourceType,
         resourceId,
         action,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+        requestId,
+      );
+    } catch (error) {
+      this.logResourceAccessError(requestId, userId, resourceType, resourceId, action, error);
       return false;
     }
+  }
+
+  /**
+   * Get user for access check
+   */
+  private async getUserForAccessCheck(userId: string, requestId: string): Promise<User | null> {
+    const user = await this.userRepository.findById(userId, requestId);
+    if (!user) {
+      this.loggingService.warn('Resource access check failed: User not found', {
+        requestId,
+        userId,
+      });
+    }
+    return user;
+  }
+
+  /**
+   * Check if user is admin
+   */
+  private isAdminUser(user: { role: UserRole }): boolean {
+    return user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
+  }
+
+  /**
+   * Log admin access granted
+   */
+  private logAdminAccessGranted(requestId: string, userId: string, role: UserRole): void {
+    this.loggingService.debug('Resource access granted for admin role', {
+      requestId,
+      userId,
+      role,
+    });
+  }
+
+  /**
+   * Log owner access granted
+   */
+  private logOwnerAccessGranted(
+    requestId: string,
+    userId: string,
+    resourceType: string,
+    resourceId: string,
+  ): void {
+    this.loggingService.debug('Resource access granted for owner', {
+      requestId,
+      userId,
+      resourceType,
+      resourceId,
+    });
+  }
+
+  /**
+   * Check permission-based access
+   */
+  private async checkPermissionBasedAccess(
+    userId: string,
+    resourceType: string,
+    resourceId: string,
+    action: string,
+    requestId: string,
+  ): Promise<boolean> {
+    const requiredPermission = this.mapActionToPermission(action, resourceType);
+    if (!requiredPermission) {
+      return false;
+    }
+
+    const hasPermission = await this.hasPermission(userId, requiredPermission, requestId);
+
+    this.loggingService.debug('Resource access check completed', {
+      requestId,
+      userId,
+      resourceType,
+      resourceId,
+      action,
+      requiredPermission,
+      hasPermission,
+    });
+
+    return hasPermission;
+  }
+
+  /**
+   * Log resource access error
+   */
+  private logResourceAccessError(
+    requestId: string,
+    userId: string,
+    resourceType: string,
+    resourceId: string,
+    action: string,
+    error: unknown,
+  ): void {
+    this.loggingService.error('Resource access check failed', {
+      requestId,
+      userId,
+      resourceType,
+      resourceId,
+      action,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 
   /**

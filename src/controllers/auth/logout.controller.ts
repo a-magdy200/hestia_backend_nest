@@ -1,7 +1,7 @@
 import { Controller, Post, HttpCode, HttpStatus, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-import { AuthenticationService } from '../../services/authentication.service';
+import { AuthenticationService } from '../../services/authentication/authentication.service';
 import { LoggingService } from '../../services/logging.service';
 
 /**

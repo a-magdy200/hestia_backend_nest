@@ -42,6 +42,154 @@ export class RateLimitService {
   }
 
   /**
+   * Check if key is currently blocked
+   * @param entry - Rate limit entry
+   * @param now - Current timestamp
+   * @param key - Rate limit key
+   * @param requestId - Request identifier
+   * @returns Rate limit result if blocked, null otherwise
+   */
+  private checkIfBlocked(
+    entry: RateLimitEntry | undefined,
+    now: number,
+    key: string,
+    requestId: string,
+  ): {
+    allowed: boolean;
+    remaining: number;
+    resetTime: number;
+    retryAfter: number;
+  } | null {
+    if (entry?.blockedUntil && now < entry.blockedUntil) {
+      const retryAfter = Math.ceil((entry.blockedUntil - now) / 1000);
+
+      this.logger.warn(`Rate limit blocked: ${key}`, {
+        requestId,
+        key,
+        retryAfter,
+        blockedUntil: entry.blockedUntil,
+      });
+
+      return {
+        allowed: false,
+        remaining: 0,
+        resetTime: entry.resetTime,
+        retryAfter,
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Handle new rate limit window
+   * @param key - Rate limit key
+   * @param now - Current timestamp
+   * @param requestId - Request identifier
+   * @returns Rate limit result
+   */
+  private handleNewWindow(
+    key: string,
+    now: number,
+    requestId: string,
+  ): {
+    allowed: boolean;
+    remaining: number;
+    resetTime: number;
+  } {
+    const newEntry: RateLimitEntry = {
+      count: 1,
+      resetTime: now + this.config.windowMs,
+    };
+
+    this.rateLimitStore.set(key, newEntry);
+
+    this.logger.debug(`Rate limit window started: ${key}`, {
+      requestId,
+      key,
+      count: 1,
+      resetTime: newEntry.resetTime,
+    });
+
+    return {
+      allowed: true,
+      remaining: this.config.maxRequests - 1,
+      resetTime: newEntry.resetTime,
+    };
+  }
+
+  /**
+   * Handle rate limit exceeded
+   * @param entry - Rate limit entry
+   * @param now - Current timestamp
+   * @param key - Rate limit key
+   * @param requestId - Request identifier
+   * @returns Rate limit result
+   */
+  private handleLimitExceeded(
+    entry: RateLimitEntry,
+    now: number,
+    key: string,
+    requestId: string,
+  ): {
+    allowed: boolean;
+    remaining: number;
+    resetTime: number;
+    retryAfter: number;
+  } {
+    // Block the key
+    entry.blockedUntil = now + this.config.blockDurationMs;
+
+    this.logger.warn(`Rate limit exceeded: ${key}`, {
+      requestId,
+      key,
+      count: entry.count,
+      maxRequests: this.config.maxRequests,
+      blockedUntil: entry.blockedUntil,
+    });
+
+    return {
+      allowed: false,
+      remaining: 0,
+      resetTime: entry.resetTime,
+      retryAfter: Math.ceil(this.config.blockDurationMs / 1000),
+    };
+  }
+
+  /**
+   * Handle normal rate limit check
+   * @param entry - Rate limit entry
+   * @param key - Rate limit key
+   * @param requestId - Request identifier
+   * @returns Rate limit result
+   */
+  private handleNormalCheck(
+    entry: RateLimitEntry,
+    key: string,
+    requestId: string,
+  ): {
+    allowed: boolean;
+    remaining: number;
+    resetTime: number;
+  } {
+    // Increment count
+    entry.count++;
+
+    this.logger.debug(`Rate limit check: ${key}`, {
+      requestId,
+      key,
+      count: entry.count,
+      remaining: this.config.maxRequests - entry.count,
+      resetTime: entry.resetTime,
+    });
+
+    return {
+      allowed: true,
+      remaining: this.config.maxRequests - entry.count,
+      resetTime: entry.resetTime,
+    };
+  }
+
+  /**
    * Check if request is allowed
    * @param key - Rate limit key (usually IP or user ID)
    * @param requestId - Request identifier for logging
@@ -61,84 +209,23 @@ export class RateLimitService {
       const entry = this.rateLimitStore.get(key);
 
       // Check if currently blocked
-      if (entry?.blockedUntil && now < entry.blockedUntil) {
-        const retryAfter = Math.ceil((entry.blockedUntil - now) / 1000);
-
-        this.logger.warn(`Rate limit blocked: ${key}`, {
-          requestId,
-          key,
-          retryAfter,
-          blockedUntil: entry.blockedUntil,
-        });
-
-        return {
-          allowed: false,
-          remaining: 0,
-          resetTime: entry.resetTime,
-          retryAfter,
-        };
+      const blockedResult = this.checkIfBlocked(entry, now, key, requestId);
+      if (blockedResult) {
+        return blockedResult;
       }
 
       // Check if window has reset
       if (!entry || now >= entry.resetTime) {
-        const newEntry: RateLimitEntry = {
-          count: 1,
-          resetTime: now + this.config.windowMs,
-        };
-
-        this.rateLimitStore.set(key, newEntry);
-
-        this.logger.debug(`Rate limit window started: ${key}`, {
-          requestId,
-          key,
-          count: 1,
-          resetTime: newEntry.resetTime,
-        });
-
-        return {
-          allowed: true,
-          remaining: this.config.maxRequests - 1,
-          resetTime: newEntry.resetTime,
-        };
+        return this.handleNewWindow(key, now, requestId);
       }
 
       // Check if limit exceeded
       if (entry.count >= this.config.maxRequests) {
-        // Block the key
-        entry.blockedUntil = now + this.config.blockDurationMs;
-
-        this.logger.warn(`Rate limit exceeded: ${key}`, {
-          requestId,
-          key,
-          count: entry.count,
-          maxRequests: this.config.maxRequests,
-          blockedUntil: entry.blockedUntil,
-        });
-
-        return {
-          allowed: false,
-          remaining: 0,
-          resetTime: entry.resetTime,
-          retryAfter: Math.ceil(this.config.blockDurationMs / 1000),
-        };
+        return this.handleLimitExceeded(entry, now, key, requestId);
       }
 
-      // Increment count
-      entry.count++;
-
-      this.logger.debug(`Rate limit check: ${key}`, {
-        requestId,
-        key,
-        count: entry.count,
-        remaining: this.config.maxRequests - entry.count,
-        resetTime: entry.resetTime,
-      });
-
-      return {
-        allowed: true,
-        remaining: this.config.maxRequests - entry.count,
-        resetTime: entry.resetTime,
-      };
+      // Normal check
+      return this.handleNormalCheck(entry, key, requestId);
     } catch (error) {
       this.logger.error(`Rate limit check error for key ${key}:`, error);
       // Allow request on error to prevent service disruption
@@ -204,13 +291,9 @@ export class RateLimitService {
   /**
    * Get rate limit status for key
    * @param key - Rate limit key
-   * @param requestId - Request identifier
    * @returns Rate limit status
    */
-  async getStatus(
-    key: string,
-    requestId: string,
-  ): Promise<{
+  async getStatus(key: string): Promise<{
     count: number;
     remaining: number;
     resetTime: number;
@@ -238,7 +321,7 @@ export class RateLimitService {
         remaining,
         resetTime: entry.resetTime,
         isBlocked,
-        blockedUntil: entry.blockedUntil,
+        ...(entry.blockedUntil && { blockedUntil: entry.blockedUntil }),
       };
     } catch (error) {
       this.logger.error(`Rate limit status error for key ${key}:`, error);

@@ -182,7 +182,7 @@ export class ErrorMonitoringService {
    */
   private async getTopErrorTypes(
     queryBuilder: ReturnType<typeof this.errorLogRepository.createQueryBuilder>,
-  ) {
+  ): Promise<{ errorType: string; count: number }[]> {
     const topErrorTypes = await queryBuilder
       .select('error.errorType', 'errorType')
       .addSelect('COUNT(*)', 'count')

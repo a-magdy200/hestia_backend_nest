@@ -1,7 +1,13 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { UserProfile } from '../database/entities/user-profile.entity';
+import { Recipe } from '../database/entities/recipe.entity';
+import { ShoppingList } from '../database/entities/shopping-list.entity';
 import { UserRole, Permission } from '../interfaces/enums/user.enum';
+import { AuthenticationService } from '../services/authentication/authentication.service';
 import { LoggingService } from '../services/logging.service';
 
 /**
@@ -13,12 +19,22 @@ import { LoggingService } from '../services/logging.service';
 @Injectable()
 export class RbacGuard implements CanActivate {
   /**
-   *
-   * @param userService
+   * Constructor for RbacGuard
+   * @param userProfileRepository
+   * @param recipeRepository
+   * @param shoppingListRepository
+   * @param authenticationService
    * @param loggingService
    * @param reflector
    */
   constructor(
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(Recipe)
+    private readonly recipeRepository: Repository<Recipe>,
+    @InjectRepository(ShoppingList)
+    private readonly shoppingListRepository: Repository<ShoppingList>,
+    private readonly authenticationService: AuthenticationService,
     private readonly loggingService: LoggingService,
     private readonly reflector: Reflector,
   ) {}
@@ -126,17 +142,15 @@ export class RbacGuard implements CanActivate {
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return;
     }
-    // Get user permissions (from request or service)
-    let userPermissions: Permission[] = user.permissions ?? [];
-    if (userPermissions.length === 0) {
-      // TODO: Implement getUserPermissions method in UserService
-      userPermissions = [];
-    }
+
+    // Get user permissions from authentication service
+    const userPermissions = await this.authenticationService.getUserPermissions(user.id, requestId);
+
     const hasAll = requiredPermissions.every(perm => userPermissions.includes(perm));
     if (!hasAll) {
       this.loggingService.warn('RbacGuard: Missing required permissions', {
         requestId,
-        userId: user['id'],
+        userId: user.id,
         userPermissions,
         requiredPermissions,
       });
@@ -166,12 +180,38 @@ export class RbacGuard implements CanActivate {
     if (adminBypass && isAdmin) {
       this.loggingService.debug('RbacGuard: Admin bypass granted', {
         requestId,
-        userId: user['id'],
+        userId: user.id,
         role: user.role,
       });
       return true;
     }
     return false;
+  }
+
+  /**
+   * Check ownership for a specific resource type
+   * @param resourceType - Type of resource
+   * @param resourceId - Resource ID
+   * @param userId - User ID
+   * @param requestId - Request identifier
+   * @returns True if user owns the resource
+   */
+  private async checkResourceOwnership(
+    resourceType: string,
+    resourceId: string,
+    userId: string,
+    requestId: string,
+  ): Promise<boolean> {
+    switch (resourceType) {
+      case 'recipes':
+        return await this.checkRecipeOwnership(resourceId, userId, requestId);
+      case 'profiles':
+        return await this.checkProfileOwnership(resourceId, userId, requestId);
+      case 'shopping-lists':
+        return await this.checkShoppingListOwnership(resourceId, userId, requestId);
+      default:
+        return false;
+    }
   }
 
   /**
@@ -194,27 +234,22 @@ export class RbacGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+
     if (!checkOwnership) return;
 
     const resourceType = this.getResourceType(request['url'] as string);
     const params = request['params'] as Record<string, unknown>;
-    const resourceId = (params?.id as string) ?? '';
+    const resourceId = (params?.['id'] as string) ?? '';
 
-    let isOwner = false;
-    switch (resourceType) {
-      case 'recipes':
-        isOwner = await this.checkRecipeOwnership(resourceId, user['id'], requestId);
-        break;
-      case 'profiles':
-        isOwner = await this.checkProfileOwnership(resourceId, user['id'], requestId);
-        break;
-      case 'shopping-lists':
-        isOwner = await this.checkShoppingListOwnership(resourceId, user['id'], requestId);
-        break;
-      default:
-        isOwner = false;
-    }
-    if (!isOwner && !(user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN)) {
+    const isOwner = await this.checkResourceOwnership(
+      resourceType,
+      resourceId,
+      user['id'],
+      requestId,
+    );
+    const isAdmin = user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN;
+
+    if (!isOwner && !isAdmin) {
       this.loggingService.warn('RbacGuard: User is not resource owner', {
         requestId,
         userId: user['id'],
@@ -234,7 +269,7 @@ export class RbacGuard implements CanActivate {
     // Example: /api/v1/recipes/123
     const parts = url.split('/');
     // Find the resource type (e.g., 'recipes', 'profiles', etc.)
-    return parts.length > 3 ? parts[3] : '';
+    return parts.length > 3 ? parts[3] || '' : '';
   }
 
   /**
@@ -249,13 +284,46 @@ export class RbacGuard implements CanActivate {
     userId: string,
     requestId: string,
   ): Promise<boolean> {
-    // TODO: Implement actual recipe ownership check via repository/service
-    this.loggingService.debug('RbacGuard: Checking recipe ownership', {
-      requestId,
-      recipeId,
-      userId,
-    });
-    return true;
+    try {
+      this.loggingService.debug('RbacGuard: Checking recipe ownership', {
+        requestId,
+        recipeId,
+        userId,
+      });
+
+      const recipe = await this.recipeRepository.findOne({
+        where: { id: recipeId },
+        select: ['id', 'userId'],
+      });
+
+      if (!recipe) {
+        this.loggingService.warn('RbacGuard: Recipe not found', {
+          requestId,
+          recipeId,
+          userId,
+        });
+        return false;
+      }
+
+      const isOwner = recipe['userId'] === userId;
+
+      this.loggingService.debug('RbacGuard: Recipe ownership check result', {
+        requestId,
+        recipeId,
+        userId,
+        isOwner,
+      });
+
+      return isOwner;
+    } catch (error) {
+      this.loggingService.error('RbacGuard: Recipe ownership check failed', {
+        requestId,
+        recipeId,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
   }
 
   /**
@@ -270,13 +338,46 @@ export class RbacGuard implements CanActivate {
     userId: string,
     requestId: string,
   ): Promise<boolean> {
-    // TODO: Implement actual profile ownership check via repository/service
-    this.loggingService.debug('RbacGuard: Checking profile ownership', {
-      requestId,
-      profileId,
-      userId,
-    });
-    return true;
+    try {
+      this.loggingService.debug('RbacGuard: Checking profile ownership', {
+        requestId,
+        profileId,
+        userId,
+      });
+
+      const profile = await this.userProfileRepository.findOne({
+        where: { id: profileId },
+        select: ['id', 'userId'],
+      });
+
+      if (!profile) {
+        this.loggingService.warn('RbacGuard: Profile not found', {
+          requestId,
+          profileId,
+          userId,
+        });
+        return false;
+      }
+
+      const isOwner = profile.userId === userId;
+
+      this.loggingService.debug('RbacGuard: Profile ownership check result', {
+        requestId,
+        profileId,
+        userId,
+        isOwner,
+      });
+
+      return isOwner;
+    } catch (error) {
+      this.loggingService.error('RbacGuard: Profile ownership check failed', {
+        requestId,
+        profileId,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
   }
 
   /**
@@ -291,12 +392,45 @@ export class RbacGuard implements CanActivate {
     userId: string,
     requestId: string,
   ): Promise<boolean> {
-    // TODO: Implement actual shopping list ownership check via repository/service
-    this.loggingService.debug('RbacGuard: Checking shopping list ownership', {
-      requestId,
-      shoppingListId,
-      userId,
-    });
-    return true;
+    try {
+      this.loggingService.debug('RbacGuard: Checking shopping list ownership', {
+        requestId,
+        shoppingListId,
+        userId,
+      });
+
+      const shoppingList = await this.shoppingListRepository.findOne({
+        where: { id: shoppingListId },
+        select: ['id', 'userId'],
+      });
+
+      if (!shoppingList) {
+        this.loggingService.warn('RbacGuard: Shopping list not found', {
+          requestId,
+          shoppingListId,
+          userId,
+        });
+        return false;
+      }
+
+      const isOwner = shoppingList.userId === userId;
+
+      this.loggingService.debug('RbacGuard: Shopping list ownership check result', {
+        requestId,
+        shoppingListId,
+        userId,
+        isOwner,
+      });
+
+      return isOwner;
+    } catch (error) {
+      this.loggingService.error('RbacGuard: Shopping list ownership check failed', {
+        requestId,
+        shoppingListId,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
   }
 }

@@ -20,6 +20,7 @@ import { ValidationPipe } from './pipes/validation.pipe';
 import { AppService } from './services/app.service';
 import { LoggingService } from './services/logging.service';
 import { MonitoringService } from './services/monitoring.service';
+import { UserModule } from './modules/user.module';
 
 /**
  * Database configuration interface
@@ -139,6 +140,7 @@ const createTypeOrmConfig = (dbConfig: DatabaseConfigService): Record<string, un
       inject: [MainConfigService],
     }),
     TypeOrmModule.forFeature([ApiRequestLog, ApplicationMetric, ErrorLog, PerformanceMetric]),
+    UserModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

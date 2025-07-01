@@ -1,16 +1,13 @@
-# Hestia Enterprise SaaS Platform - Technical Guidelines & Restrictions
+# Technical Guidelines and Restrictions
 
 ## 📋 Document Information
 
-| **Document Type**  | Technical Guidelines & Restrictions                                     |
-| ------------------ | ----------------------------------------------------------------------- |
-| **Version**        | 2.0.0                                                                   |
-| **Last Updated**   | December 28, 2024                                                       |
-| **Next Review**    | February 28, 2025                                                       |
-| **Document Owner** | Technical Architecture Team                                             |
-| **Stakeholders**   | Development Team, DevOps Team, QA Team, Project Managers, Security Team |
-| **Classification** | Technical Standards & Quality Enforcement Document                      |
-| **Status**         | Active - Enforced                                                       |
+| **Document Type** | Technical Guidelines and Restrictions |
+| ----------------- | ------------------------------------- |
+| **Version**       | 1.1.0                                 |
+| **Last Updated**  | December 28, 2024                     |
+| **Owner**         | Architecture Team                     |
+| **Status**        | Phase 1 - 90% Complete                |
 
 ---
 

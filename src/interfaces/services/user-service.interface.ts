@@ -17,6 +17,32 @@ export interface UserStatistics {
   usersByStatus: Record<UserStatus, number>;
   recentRegistrations: number;
   averageLoginFrequency: number;
+  // Additional detailed metrics
+  suspendedUsers: number;
+  lockedUsers: number;
+  pendingVerificationUsers: number;
+  activeUsersLast30Days: number;
+  activeUsersLast7Days: number;
+  activeUsersLast24Hours: number;
+  usersWithFailedAttempts: number;
+  usersWithHighFailedAttempts: number;
+  accountAgeStats: {
+    averageAge: number;
+    oldestAccount: number;
+    newestAccount: number;
+    accountsByAge: Record<string, number>;
+  };
+  lastLoginStats: {
+    usersWithLoginHistory: number;
+    usersNeverLoggedIn: number;
+    averageDaysSinceLastLogin: number;
+    loginActivityByPeriod: Record<string, number>;
+  };
+  tenantStats: {
+    totalTenants: number;
+    usersByTenant: Record<string, number>;
+    averageUsersPerTenant: number;
+  };
 }
 
 /**

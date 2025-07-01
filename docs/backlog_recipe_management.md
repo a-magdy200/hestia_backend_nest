@@ -3,10 +3,11 @@
 ## 📋 Document Information
 
 | **Document Type** | Recipe Management Backlog |
-| ----------------- | ------------------------- |
-| **Version**       | 1.0.0                     |
-| **Last Updated**  | December 28, 2024         |
-| **Owner**         | Product Management Team   |
+| ----------------- | ----------------------- |
+| **Version**       | 1.1.0                   |
+| **Last Updated**  | December 28, 2024       |
+| **Owner**         | Product Management Team  |
+| **Status**        | Phase 1 - 90% Complete  |
 
 ---
 
@@ -14,6 +15,47 @@
 
 | ID     | Epic                 | Story                                   | Task                        | Subtask                       | Description                                 | Estimate (h) | Priority | Status  | Dependencies |
 | ------ | -------------------- | --------------------------------------- | --------------------------- | ----------------------------- | ------------------------------------------- | ------------ | -------- | ------- | ------------ |
+| RM-001 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Validate input fields         | Check title, description, ingredients, etc. | 1            | High     | Completed |              |
+| RM-002 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Store recipe in DB            | Save recipe data in PostgreSQL              | 1            | High     | Completed |              |
+| RM-003 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Handle image upload           | Store images in S3/Wasabi                   | 1            | Medium   | Completed |              |
+| RM-004 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Log creation event            | Log for audit                               | 1            | Medium   | Completed |              |
+| RM-005 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Write unit tests              | Cover all create logic                      | 2            | High     | Completed |              |
+| RM-006 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Write integration tests       | Test end-to-end creation                    | 2            | High     | Completed |              |
+| RM-007 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Update API docs               | Document create endpoint                    | 1            | Medium   | Completed |              |
+| RM-008 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Review code                   | Peer review for quality                     | 1            | High     | Completed |              |
+| RM-009 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Refactor for clean code       | Ensure code meets guidelines                | 1            | Medium   | Completed |              |
+| RM-010 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Lint and fix issues           | Run linter and fix errors                   | 1            | High     | Completed |              |
+| RM-011 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Commit and push code          | Push to repository                          | 1            | High     | Completed |              |
+| RM-012 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Update changelog              | Add entry for create feature                | 1            | Medium   | Completed |              |
+| RM-013 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Merge to main                 | Complete PR and merge                       | 1            | High     | Completed |              |
+| RM-014 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Fetch recipe from DB          | Retrieve recipe by ID                       | 1            | High     | Completed |              |
+| RM-015 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Handle not found              | Return error if recipe missing              | 1            | High     | Completed |              |
+| RM-016 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Write unit tests              | Cover all get logic                         | 2            | High     | Completed |              |
+| RM-017 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Write integration tests       | Test end-to-end get                         | 2            | High     | Completed |              |
+| RM-018 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Update API docs               | Document get endpoint                       | 1            | Medium   | Completed |              |
+| RM-019 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Review code                   | Peer review for quality                     | 1            | High     | Completed |              |
+| RM-020 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Refactor for clean code       | Ensure code meets guidelines                | 1            | Medium   | Completed |              |
+| RM-021 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Lint and fix issues           | Run linter and fix errors                   | 1            | High     | Completed |              |
+| RM-022 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Commit and push code          | Push to repository                          | 1            | High     | Completed |              |
+| RM-023 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Update changelog              | Add entry for get feature                   | 1            | Medium   | Completed |              |
+| RM-024 | Recipe CRUD          | As a user, I want to view recipes       | Implement get recipe API    | Merge to main                 | Complete PR and merge                       | 1            | High     | Completed |              |
+| RM-025 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Validate input fields         | Check title, description, ingredients, etc. | 1            | High     | Completed |              |
+| RM-026 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Update recipe in DB           | Save updated recipe data                    | 1            | High     | Completed |              |
+| RM-027 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Handle image updates          | Update images in S3/Wasabi                  | 1            | Medium   | Completed |              |
+| RM-028 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Log update event              | Log for audit                               | 1            | Medium   | Completed |              |
+| RM-029 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Write unit tests              | Cover all update logic                      | 2            | High     | Completed |              |
+| RM-030 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Write integration tests       | Test end-to-end update                      | 2            | High     | Completed |              |
+| RM-031 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Update API docs               | Document update endpoint                    | 1            | Medium   | Completed |              |
+| RM-032 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Review code                   | Peer review for quality                     | 1            | High     | Completed |              |
+| RM-033 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Refactor for clean code       | Ensure code meets guidelines                | 1            | Medium   | Completed |              |
+| RM-034 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Lint and fix issues           | Run linter and fix errors                   | 1            | High     | Completed |              |
+| RM-035 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Commit and push code          | Push to repository                          | 1            | High     | Completed |              |
+| RM-036 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Update changelog              | Add entry for update feature                | 1            | Medium   | Completed |              |
+| RM-037 | Recipe CRUD          | As a user, I want to update recipes     | Implement update recipe API | Merge to main                 | Complete PR and merge                       | 1            | High     | Completed |              |
+| RM-038 | Recipe CRUD          | As a user, I want to delete recipes     | Implement delete recipe API | Validate permissions          | Check if user can delete                    | 1            | High     | Completed |              |
+| RM-039 | Recipe CRUD          | As a user, I want to delete recipes     | Implement delete recipe API | Soft delete recipe            | Mark as deleted in DB                       | 1            | High     | Completed |              |
+| RM-040 | Recipe CRUD          | As a user, I want to delete recipes     | Implement delete recipe API | Handle image deletion         | Remove images from S3/Wasabi                | 1            | Medium   | Completed |              |
+| RM-041 | Recipe CRUD          | As a user, I want to delete recipes     | Implement delete recipe API | Log deletion event            | Log for audit                               | 1            | Medium   | Completed |              |
 | RM-001 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Validate input fields         | Check title, description, ingredients, etc. | 1            | High     | Planned |              |
 | RM-002 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Store recipe in DB            | Save recipe data in PostgreSQL              | 1            | High     | Planned |              |
 | RM-003 | Recipe CRUD          | As a user, I want to create a recipe    | Implement create recipe API | Handle image upload           | Store images in S3/Wasabi                   | 1            | Medium   | Planned |              |

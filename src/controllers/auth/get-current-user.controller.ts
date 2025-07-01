@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, HttpStatus, Request, UseGuards } from '@nest
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 import { AuthGuard } from '../../guards/auth.guard';
-import { AuthenticationService } from '../../services/authentication.service';
+import { AuthenticationService } from '../../services/authentication/authentication.service';
 import { LoggingService } from '../../services/logging.service';
 
 /**

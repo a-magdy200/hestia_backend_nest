@@ -107,22 +107,64 @@ export class PasswordService {
     const feedback: string[] = [];
     let score = 0;
 
-    // Length check
+    // Check length and add to score
+    score += this.checkPasswordLength(password, feedback);
+
+    // Check character variety and add to score
+    score += this.checkCharacterVariety(password);
+
+    // Check for missing character types
+    this.checkMissingCharacterTypes(password, feedback);
+
+    // Check for common patterns
+    score = this.checkCommonPatterns(password, score, feedback);
+
+    // Check for repeated characters
+    score = this.checkRepeatedCharacters(password, score, feedback);
+
+    const isValid = score >= 3 && feedback.length === 0;
+
+    this.loggingService.debug('Password strength validation completed', {
+      requestId,
+      score,
+      isValid,
+      feedbackCount: feedback.length,
+    });
+
+    return {
+      isValid,
+      score: Math.min(5, score),
+      feedback,
+    };
+  }
+
+  /**
+   * Check password length and return score
+   */
+  private checkPasswordLength(password: string, feedback: string[]): number {
     if (password.length < 8) {
       feedback.push('Password must be at least 8 characters long');
-    } else if (password.length >= 12) {
-      score += 2;
-    } else {
-      score += 1;
+      return 0;
     }
+    return password.length >= 12 ? 2 : 1;
+  }
 
-    // Character variety checks
+  /**
+   * Check character variety and return score
+   */
+  private checkCharacterVariety(password: string): number {
+    let score = 0;
     if (/[a-z]/.test(password)) score += 1;
     if (/[A-Z]/.test(password)) score += 1;
     if (/[0-9]/.test(password)) score += 1;
     if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    return score;
+  }
 
-    // Missing character types
+  /**
+   * Check for missing character types and add feedback
+   */
+  private checkMissingCharacterTypes(password: string, feedback: string[]): void {
     if (!/[a-z]/.test(password)) {
       feedback.push('Include at least one lowercase letter');
     }
@@ -135,8 +177,12 @@ export class PasswordService {
     if (!/[^A-Za-z0-9]/.test(password)) {
       feedback.push('Include at least one special character');
     }
+  }
 
-    // Common patterns check
+  /**
+   * Check for common patterns and adjust score
+   */
+  private checkCommonPatterns(password: string, score: number, feedback: string[]): number {
     const commonPatterns = [
       'password',
       '123456',
@@ -153,29 +199,20 @@ export class PasswordService {
     const lowerPassword = password.toLowerCase();
     if (commonPatterns.some(pattern => lowerPassword.includes(pattern))) {
       feedback.push('Avoid common password patterns');
-      score = Math.max(0, score - 2);
+      return Math.max(0, score - 2);
     }
+    return score;
+  }
 
-    // Sequential characters check
+  /**
+   * Check for repeated characters and adjust score
+   */
+  private checkRepeatedCharacters(password: string, score: number, feedback: string[]): number {
     if (/(.)\1{2,}/.test(password)) {
       feedback.push('Avoid repeated characters');
-      score = Math.max(0, score - 1);
+      return Math.max(0, score - 1);
     }
-
-    const isValid = score >= 3 && feedback.length === 0;
-
-    this.loggingService.debug('Password strength validation completed', {
-      requestId,
-      score,
-      isValid,
-      feedbackCount: feedback.length,
-    });
-
-    return {
-      isValid,
-      score: Math.min(5, score),
-      feedback,
-    };
+    return score;
   }
 
   /**

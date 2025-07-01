@@ -39,4 +39,5 @@ import { validateEnv } from './environment.validation';
   providers: [MainConfigService],
   exports: [MainConfigService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ConfigModule {}

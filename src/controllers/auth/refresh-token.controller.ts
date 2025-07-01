@@ -10,7 +10,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 import { RefreshTokenDto } from '../../dto/auth/refresh-token.dto';
-import { AuthenticationService } from '../../services/authentication.service';
+import { AuthenticationService } from '../../services/authentication/authentication.service';
 import { LoggingService } from '../../services/logging.service';
 
 /**
