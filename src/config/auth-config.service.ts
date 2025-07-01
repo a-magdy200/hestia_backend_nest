@@ -6,10 +6,14 @@ import { AuthConfig } from './interfaces/auth.config.interface';
 
 @Injectable()
 export class AuthConfigSectionService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   get auth(): AuthConfig {
-    return this.configService.get<AuthConfig>('auth')!;
+    const authConfig = this.configService.get<AuthConfig>('auth');
+    if (!authConfig) {
+      throw new Error('Auth configuration is not defined');
+    }
+    return authConfig;
   }
 
   get authStrategy(): AuthStrategy {

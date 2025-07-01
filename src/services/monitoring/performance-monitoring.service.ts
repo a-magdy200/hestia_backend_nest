@@ -5,6 +5,9 @@ import { Repository } from 'typeorm';
 import { ApplicationMetric, PerformanceMetric } from '@/database/entities/monitoring.entity';
 import { LoggingService } from '@/services/logging.service';
 
+/**
+ *
+ */
 export interface IApplicationMetricData {
   metricName: string;
   service: string;
@@ -15,6 +18,9 @@ export interface IApplicationMetricData {
   tenantId?: string;
 }
 
+/**
+ *
+ */
 export interface IPerformanceMetricData {
   metricType: string;
   service: string;

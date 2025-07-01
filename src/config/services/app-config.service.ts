@@ -10,14 +10,18 @@ import { AppConfig } from '../interfaces/app.config.interface';
  */
 @Injectable()
 export class AppConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get application configuration
    * @returns Application configuration object
    */
   get app(): AppConfig {
-    return this.configService.get<AppConfig>('app')!;
+    const appConfig = this.configService.get<AppConfig>('app');
+    if (!appConfig) {
+      throw new Error('Application configuration is not defined');
+    }
+    return appConfig;
   }
 
   /**

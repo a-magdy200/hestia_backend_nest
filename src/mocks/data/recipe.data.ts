@@ -14,12 +14,12 @@ interface MockRecipe {
   name: string;
   description: string;
   instructions: string[];
-  ingredients: Array<{
+  ingredients: {
     ingredientId: string;
     quantity: number;
     unit: string;
     notes?: string;
-  }>;
+  }[];
   servings: number;
   prepTime: number;
   cookTime: number;
@@ -39,7 +39,7 @@ export const mockRecipes: MockRecipe[] = Array.from({ length: 20 }, () => {
   const recipe = {
     id: faker.string.uuid(),
     userId: faker.string.uuid(),
-    name: faker.commerce.productName() + ' Recipe',
+    name: `${faker.commerce.productName()} Recipe`,
     description: faker.lorem.paragraph(),
     instructions: Array.from({ length: faker.number.int({ min: 3, max: 8 }) }, () =>
       faker.lorem.sentence(),

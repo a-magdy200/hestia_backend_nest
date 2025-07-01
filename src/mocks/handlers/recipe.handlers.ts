@@ -14,12 +14,12 @@ interface CreateRecipeRequest {
   name: string;
   description?: string;
   instructions?: string[];
-  ingredients?: Array<{
+  ingredients?: {
     ingredientId: string;
     quantity: number;
     unit: string;
     notes?: string;
-  }>;
+  }[];
   servings?: number;
   prepTime?: number;
   cookTime?: number;
@@ -34,12 +34,12 @@ interface UpdateRecipeRequest {
   name?: string;
   description?: string;
   instructions?: string[];
-  ingredients?: Array<{
+  ingredients?: {
     ingredientId: string;
     quantity: number;
     unit: string;
     notes?: string;
-  }>;
+  }[];
   servings?: number;
   prepTime?: number;
   cookTime?: number;

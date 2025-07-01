@@ -43,7 +43,7 @@ const testConfigFactory = <T>(factory: () => T, name: string): T => {
  * Test app configuration
  * @returns App configuration test object
  */
-const testAppConfig = () => {
+const testAppConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(appConfig, 'app');
   return {
     environment: config.environment,
@@ -57,7 +57,7 @@ const testAppConfig = () => {
  * Test database configuration
  * @returns Database configuration test object
  */
-const testDatabaseConfig = () => {
+const testDatabaseConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(databaseConfig, 'database');
   return {
     type: config.type,
@@ -71,7 +71,7 @@ const testDatabaseConfig = () => {
  * Test auth configuration
  * @returns Auth configuration test object
  */
-const testAuthConfig = () => {
+const testAuthConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(authConfig, 'auth');
   return {
     strategy: config.strategy,
@@ -84,7 +84,7 @@ const testAuthConfig = () => {
  * Test cache configuration
  * @returns Cache configuration test object
  */
-const testCacheConfig = () => {
+const testCacheConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(cacheConfig, 'cache');
   return {
     type: config.type,
@@ -97,7 +97,7 @@ const testCacheConfig = () => {
  * Test rate limit configuration
  * @returns Rate limit configuration test object
  */
-const testRateLimitConfig = () => {
+const testRateLimitConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(rateLimitConfig, 'rate limit');
   return {
     enabled: config.enabled,
@@ -111,7 +111,7 @@ const testRateLimitConfig = () => {
  * Test AWS configuration
  * @returns AWS configuration test object
  */
-const testAwsConfig = () => {
+const testAwsConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(awsConfig, 'AWS');
   return {
     region: config.region,
@@ -124,7 +124,7 @@ const testAwsConfig = () => {
  * Test email configuration
  * @returns Email configuration test object
  */
-const testEmailConfig = () => {
+const testEmailConfig = (): Record<string, unknown> => {
   const config = testConfigFactory(emailConfig, 'email');
   return {
     provider: config.provider,
@@ -137,7 +137,7 @@ const testEmailConfig = () => {
  * Test enum values
  * @returns Enum values test object
  */
-const testEnums = () => {
+const testEnums = (): Record<string, unknown[]> => {
   return {
     environment: [Environment.DEVELOPMENT, Environment.PRODUCTION, Environment.TEST],
     logLevel: [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.DEBUG],
@@ -294,6 +294,16 @@ export const verifyEmailConfig = (configService: ConfigService): boolean => {
     throw new Error('From email address is required');
   }
 
+  verifyEmailProviderConfig(emailConfig);
+
+  return true;
+};
+
+/**
+ * Verify email provider specific configuration
+ * @param emailConfig - Email configuration service
+ */
+const verifyEmailProviderConfig = (emailConfig: EmailConfigService): void => {
   if (emailConfig.isSmtpProvider && !emailConfig.smtpHost) {
     throw new Error('SMTP host is required when using SMTP provider');
   }
@@ -305,8 +315,6 @@ export const verifyEmailConfig = (configService: ConfigService): boolean => {
   if (emailConfig.isMailgunProvider && !emailConfig.mailgunApiKey) {
     throw new Error('Mailgun API key is required when using Mailgun provider');
   }
-
-  return true;
 };
 
 /**

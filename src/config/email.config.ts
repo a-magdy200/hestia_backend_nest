@@ -1,12 +1,19 @@
 import { EnvVar } from './enums';
 import { EmailConfig } from './interfaces/external.config.interface';
-import { EnvUtil } from './utils/env.util';
+import * as EnvUtil from './utils/env.util';
 
 /**
  * Create SMTP configuration
  * @returns SMTP configuration object
  */
-const createSmtpConfig = () => {
+const createSmtpConfig = (): {
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  password: string;
+  fromName?: string;
+} => {
   const config: {
     host: string;
     port: number;
@@ -33,7 +40,10 @@ const createSmtpConfig = () => {
  * Create SendGrid configuration
  * @returns SendGrid configuration object
  */
-const createSendGridConfig = () => {
+const createSendGridConfig = (): {
+  apiKey: string;
+  fromName?: string;
+} => {
   const config: {
     apiKey: string;
     fromName?: string;
@@ -52,7 +62,11 @@ const createSendGridConfig = () => {
  * Create Mailgun configuration
  * @returns Mailgun configuration object
  */
-const createMailgunConfig = () => {
+const createMailgunConfig = (): {
+  apiKey: string;
+  domain: string;
+  fromName?: string;
+} => {
   const config: {
     apiKey: string;
     domain: string;

@@ -18,11 +18,11 @@ interface CreateIngredientRequest {
   nutritionalInfo?: Record<string, number>;
   allergens?: string[];
   dietaryTypes?: string[];
-  substitutions?: Array<{
+  substitutions?: {
     ingredient: string;
     ratio: number;
     notes: string;
-  }>;
+  }[];
 }
 
 interface UpdateIngredientRequest {
@@ -33,11 +33,11 @@ interface UpdateIngredientRequest {
   nutritionalInfo?: Record<string, number>;
   allergens?: string[];
   dietaryTypes?: string[];
-  substitutions?: Array<{
+  substitutions?: {
     ingredient: string;
     ratio: number;
     notes: string;
-  }>;
+  }[];
 }
 
 /**

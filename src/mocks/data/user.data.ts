@@ -146,4 +146,21 @@ export const mockUserData = {
     error: 'Upload failed',
     message: 'Failed to upload avatar image',
   },
+
+  getAllProfiles: {
+    data: mockUserProfiles,
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: mockUserProfiles.length,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    },
+  },
+
+  getProfileById: (id: string) => {
+    const profile = mockUserProfiles.find(p => p.id === id);
+    return profile || null;
+  },
 };

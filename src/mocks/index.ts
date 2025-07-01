@@ -13,6 +13,7 @@ import { authHandlers } from './handlers/auth.handlers';
 import { healthHandlers } from './handlers/health.handlers';
 import { ingredientHandlers } from './handlers/ingredient.handlers';
 import { itemHandlers } from './handlers/item.handlers';
+import { notificationHandlers } from './handlers/notification.handlers';
 import { profileHandlers } from './handlers/profile.handlers';
 import { recipeHandlers } from './handlers/recipe.handlers';
 import { shoppingListHandlers } from './handlers/shopping-list.handlers';
@@ -45,6 +46,9 @@ const handlers = [
   // Personal domain
   ...itemHandlers,
   ...shoppingListHandlers,
+
+  // Communication and notifications
+  ...notificationHandlers,
 
   // Audit and compliance
   ...auditLogHandlers,

@@ -47,6 +47,11 @@ interface EmailResendRequest {
   email: string;
 }
 
+interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 /**
  * Authentication handlers
  * Provides mock responses for authentication endpoints
@@ -359,5 +364,203 @@ export const authHandlers = [
         { status: 400 },
       );
     }
+  }),
+
+  /**
+   * Get current user endpoint
+   * GET /auth/me
+   */
+  http.get('/auth/me', () => {
+    return HttpResponse.json(mockAuthData.getCurrentUser, { status: 200 });
+  }),
+
+  /**
+   * Change password endpoint
+   * POST /auth/change-password
+   */
+  http.post('/auth/change-password', async ({ request }) => {
+    try {
+      const body = (await request.json()) as ChangePasswordRequest;
+      const { currentPassword, newPassword } = body;
+
+      // Validate required fields
+      if (!currentPassword || !newPassword) {
+        return HttpResponse.json(
+          {
+            error: 'Missing required fields',
+            message: 'Current password and new password are required',
+          },
+          { status: 400 },
+        );
+      }
+
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return HttpResponse.json(
+          {
+            error: 'Weak password',
+            message: 'New password must be at least 8 characters long',
+          },
+          { status: 400 },
+        );
+      }
+
+      return HttpResponse.json(mockAuthData.changePasswordSuccess, { status: 200 });
+    } catch {
+      return HttpResponse.json(
+        {
+          error: 'Invalid request body',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 },
+      );
+    }
+  }),
+
+  /**
+   * Forgot password endpoint
+   * POST /auth/forgot-password
+   */
+  http.post('/auth/forgot-password', async ({ request }) => {
+    try {
+      const body = (await request.json()) as PasswordResetRequest;
+      const { email } = body;
+
+      // Validate email
+      if (!email) {
+        return HttpResponse.json(
+          {
+            error: 'Email required',
+            message: 'Email address is required',
+          },
+          { status: 400 },
+        );
+      }
+
+      return HttpResponse.json(mockAuthData.forgotPasswordSuccess, { status: 200 });
+    } catch {
+      return HttpResponse.json(
+        {
+          error: 'Invalid request body',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 },
+      );
+    }
+  }),
+
+  /**
+   * Reset password endpoint
+   * POST /auth/reset-password
+   */
+  http.post('/auth/reset-password', async ({ request }) => {
+    try {
+      const body = (await request.json()) as PasswordResetConfirmRequest;
+      const { token, password } = body;
+
+      // Validate required fields
+      if (!token || !password) {
+        return HttpResponse.json(
+          {
+            error: 'Missing required fields',
+            message: 'Token and password are required',
+          },
+          { status: 400 },
+        );
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        return HttpResponse.json(
+          {
+            error: 'Weak password',
+            message: 'Password must be at least 8 characters long',
+          },
+          { status: 400 },
+        );
+      }
+
+      return HttpResponse.json(mockAuthData.resetPasswordSuccess, { status: 200 });
+    } catch {
+      return HttpResponse.json(
+        {
+          error: 'Invalid request body',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 },
+      );
+    }
+  }),
+
+  /**
+   * Verify email endpoint
+   * POST /auth/verify-email
+   */
+  http.post('/auth/verify-email', async ({ request }) => {
+    try {
+      const body = (await request.json()) as EmailVerifyRequest;
+      const { token } = body;
+
+      // Validate token
+      if (!token) {
+        return HttpResponse.json(
+          {
+            error: 'Token required',
+            message: 'Verification token is required',
+          },
+          { status: 400 },
+        );
+      }
+
+      return HttpResponse.json(mockAuthData.verifyEmailSuccess, { status: 200 });
+    } catch {
+      return HttpResponse.json(
+        {
+          error: 'Invalid request body',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 },
+      );
+    }
+  }),
+
+  /**
+   * Resend verification endpoint
+   * POST /auth/resend-verification
+   */
+  http.post('/auth/resend-verification', async ({ request }) => {
+    try {
+      const body = (await request.json()) as EmailResendRequest;
+      const { email } = body;
+
+      // Validate email
+      if (!email) {
+        return HttpResponse.json(
+          {
+            error: 'Email required',
+            message: 'Email address is required',
+          },
+          { status: 400 },
+        );
+      }
+
+      return HttpResponse.json(mockAuthData.resendVerificationSuccess, { status: 200 });
+    } catch {
+      return HttpResponse.json(
+        {
+          error: 'Invalid request body',
+          message: 'Request body must be valid JSON',
+        },
+        { status: 400 },
+      );
+    }
+  }),
+
+  /**
+   * Revoke all tokens endpoint
+   * POST /auth/revoke-all-tokens
+   */
+  http.post('/auth/revoke-all-tokens', () => {
+    return HttpResponse.json(mockAuthData.revokeAllTokensSuccess, { status: 200 });
   }),
 ];

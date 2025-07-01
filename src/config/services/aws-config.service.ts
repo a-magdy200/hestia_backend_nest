@@ -9,14 +9,18 @@ import { AwsConfig } from '../interfaces/external.config.interface';
  */
 @Injectable()
 export class AwsConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get AWS configuration
    * @returns AWS configuration object
    */
   get aws(): AwsConfig {
-    return this.configService.get<AwsConfig>('aws')!;
+    const awsConfig = this.configService.get<AwsConfig>('aws');
+    if (!awsConfig) {
+      throw new Error('AWS configuration is not defined');
+    }
+    return awsConfig;
   }
 
   /**

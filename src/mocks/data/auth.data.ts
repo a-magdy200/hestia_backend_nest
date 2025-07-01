@@ -127,4 +127,33 @@ export const mockAuthData = {
   resendVerification: {
     message: 'Verification email sent',
   },
+
+  getCurrentUser: {
+    user: mockUser,
+    message: 'Current user retrieved successfully',
+  },
+
+  changePasswordSuccess: {
+    message: 'Password changed successfully',
+  },
+
+  forgotPasswordSuccess: {
+    message: 'Password reset email sent successfully',
+  },
+
+  resetPasswordSuccess: {
+    message: 'Password reset successful',
+  },
+
+  verifyEmailSuccess: {
+    message: 'Email verification successful',
+  },
+
+  resendVerificationSuccess: {
+    message: 'Verification email sent successfully',
+  },
+
+  revokeAllTokensSuccess: {
+    message: 'All tokens revoked successfully',
+  },
 };

@@ -45,7 +45,7 @@ interface MockShoppingList {
 const generateMockShoppingList = (): MockShoppingList => ({
   id: faker.string.uuid(),
   userId: faker.string.uuid(),
-  name: faker.commerce.productName() + ' List',
+  name: `${faker.commerce.productName()} List`,
   description: faker.lorem.sentence(),
   status: faker.helpers.arrayElement(['ACTIVE', 'COMPLETED', 'ARCHIVED']),
   items: [], // Will be filled below

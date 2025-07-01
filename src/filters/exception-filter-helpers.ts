@@ -34,9 +34,9 @@ export const addNetworkFields = (logContext: Record<string, unknown>, request: I
  * @param maxSize - Maximum allowed size
  * @returns Truncated details
  */
-export const truncateDetails = (details: unknown, maxSize: number = 1024): unknown => {
+export const truncateDetails = (details: unknown, maxSize = 1024): unknown => {
   if (typeof details === 'string') {
-    return details.length > maxSize ? details.substring(0, maxSize) + '...' : details;
+    return details.length > maxSize ? `${details.substring(0, maxSize)}...` : details;
   }
   if (typeof details === 'object' && details !== null) {
     const detailsStr = JSON.stringify(details);
@@ -45,7 +45,7 @@ export const truncateDetails = (details: unknown, maxSize: number = 1024): unkno
         truncated: true,
         size: detailsStr.length,
         maxSize,
-        preview: detailsStr.substring(0, maxSize) + '...',
+        preview: `${detailsStr.substring(0, maxSize)}...`,
       };
     }
   }

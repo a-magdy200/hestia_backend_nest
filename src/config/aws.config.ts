@@ -1,12 +1,20 @@
 import { EnvVar } from './enums';
 import { AwsConfig } from './interfaces/external.config.interface';
-import { EnvUtil } from './utils/env.util';
+import * as EnvUtil from './utils/env.util';
 
 /**
  * Create AWS S3 configuration
  * @returns AWS S3 configuration object
  */
-const createAwsS3Config = () => {
+const createAwsS3Config = (): {
+  bucket: string;
+  region: string;
+  signatureVersion?: string;
+  maxFileSize: number;
+  allowedMimeTypes: string[];
+  endpoint?: string;
+  publicUrl?: string;
+} => {
   const config: {
     bucket: string;
     region: string;
@@ -40,7 +48,12 @@ const createAwsS3Config = () => {
  * Create AWS SES configuration
  * @returns AWS SES configuration object
  */
-const createAwsSesConfig = () => {
+const createAwsSesConfig = (): {
+  region: string;
+  fromEmail: string;
+  replyToEmail?: string;
+  configurationSet?: string;
+} => {
   const config: {
     region: string;
     fromEmail: string;
@@ -65,7 +78,11 @@ const createAwsSesConfig = () => {
  * Create AWS SNS configuration
  * @returns AWS SNS configuration object
  */
-const createAwsSnsConfig = () => {
+const createAwsSnsConfig = (): {
+  region: string;
+  topicArn?: string;
+  platformApplicationArn?: string;
+} => {
   const config: {
     region: string;
     topicArn?: string;

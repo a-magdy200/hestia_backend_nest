@@ -10,14 +10,18 @@ import { DatabaseConfig } from '../interfaces/database.config.interface';
  */
 @Injectable()
 export class DatabaseConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get database configuration
    * @returns Database configuration object
    */
   get database(): DatabaseConfig {
-    return this.configService.get<DatabaseConfig>('database')!;
+    const databaseConfig = this.configService.get<DatabaseConfig>('database');
+    if (!databaseConfig) {
+      throw new Error('Database configuration is not defined');
+    }
+    return databaseConfig;
   }
 
   /**

@@ -5,6 +5,9 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ApiRequestLog } from '@/database/entities/monitoring.entity';
 import { LoggingService } from '@/services/logging.service';
 
+/**
+ *
+ */
 export interface IApiRequestLogData {
   requestId: string;
   method: string;
@@ -23,11 +26,14 @@ export interface IApiRequestLogData {
   errorStack?: string;
 }
 
+/**
+ *
+ */
 export interface ApiRequestStats {
   totalRequests: number;
   averageResponseTime: number;
   errorRate: number;
-  topEndpoints: Array<{ endpoint: string; count: number }>;
+  topEndpoints: { endpoint: string; count: number }[];
 }
 
 interface AverageResponseTimeResult {

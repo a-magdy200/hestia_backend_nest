@@ -10,14 +10,18 @@ import { RateLimitConfig } from '../interfaces/app.config.interface';
  */
 @Injectable()
 export class RateLimitConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get rate limiting configuration
    * @returns Rate limiting configuration object
    */
   get rateLimit(): RateLimitConfig {
-    return this.configService.get<RateLimitConfig>('rateLimit')!;
+    const rateLimitConfig = this.configService.get<RateLimitConfig>('rateLimit');
+    if (!rateLimitConfig) {
+      throw new Error('Rate limit configuration is not defined');
+    }
+    return rateLimitConfig;
   }
 
   /**

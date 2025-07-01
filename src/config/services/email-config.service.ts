@@ -9,14 +9,18 @@ import { EmailConfig } from '../interfaces/external.config.interface';
  */
 @Injectable()
 export class EmailConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get email configuration
    * @returns Email configuration object
    */
   get email(): EmailConfig {
-    return this.configService.get<EmailConfig>('email')!;
+    const emailConfig = this.configService.get<EmailConfig>('email');
+    if (!emailConfig) {
+      throw new Error('Email configuration is not defined');
+    }
+    return emailConfig;
   }
 
   /**

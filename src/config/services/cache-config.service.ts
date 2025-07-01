@@ -10,14 +10,18 @@ import { CacheConfig } from '../interfaces/cache.config.interface';
  */
 @Injectable()
 export class CacheConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get cache configuration
    * @returns Cache configuration object
    */
   get cache(): CacheConfig {
-    return this.configService.get<CacheConfig>('cache')!;
+    const cacheConfig = this.configService.get<CacheConfig>('cache');
+    if (!cacheConfig) {
+      throw new Error('Cache configuration is not defined');
+    }
+    return cacheConfig;
   }
 
   /**

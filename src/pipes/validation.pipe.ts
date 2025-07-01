@@ -40,13 +40,7 @@ export class ValidationPipe implements PipeTransform<unknown> {
    * @returns True if should be validated
    */
   private toValidate(metatype: new (...args: unknown[]) => unknown): boolean {
-    const types: Array<new (...args: unknown[]) => unknown> = [
-      String,
-      Boolean,
-      Number,
-      Array,
-      Object,
-    ];
+    const types: (new (...args: unknown[]) => unknown)[] = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
   }
 
@@ -55,16 +49,16 @@ export class ValidationPipe implements PipeTransform<unknown> {
    * @param errors - Validation errors from class-validator
    * @returns Formatted error array
    */
-  private formatValidationErrors(errors: ValidationError[]): Array<{
+  private formatValidationErrors(errors: ValidationError[]): {
     field: string;
     value: unknown;
     constraints: string[];
-  }> {
-    const formattedErrors: Array<{
+  }[] {
+    const formattedErrors: {
       field: string;
       value: unknown;
       constraints: string[];
-    }> = [];
+    }[] = [];
 
     for (const error of errors) {
       this.processValidationError(error, formattedErrors);
@@ -80,11 +74,11 @@ export class ValidationPipe implements PipeTransform<unknown> {
    */
   private processValidationError(
     error: ValidationError,
-    formattedErrors: Array<{
+    formattedErrors: {
       field: string;
       value: unknown;
       constraints: string[];
-    }>,
+    }[],
   ): void {
     if (error.constraints) {
       formattedErrors.push({
@@ -107,11 +101,11 @@ export class ValidationPipe implements PipeTransform<unknown> {
    */
   private processNestedErrors(
     error: ValidationError,
-    formattedErrors: Array<{
+    formattedErrors: {
       field: string;
       value: unknown;
       constraints: string[];
-    }>,
+    }[],
   ): void {
     if (!error.children) {
       return;

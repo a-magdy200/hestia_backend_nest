@@ -75,6 +75,15 @@ export class LoggingService implements LoggerService {
   }
 
   /**
+   * Log info message with context (alias for log)
+   * @param message - Info message
+   * @param context - Additional context information
+   */
+  info(message: string, context?: ILogContext): void {
+    this.logInternal(LogLevel.INFO, message, context);
+  }
+
+  /**
    * Log debug message with context
    * @param message - Debug message
    * @param context - Log context including request ID

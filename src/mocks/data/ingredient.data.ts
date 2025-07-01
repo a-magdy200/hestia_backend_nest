@@ -26,11 +26,11 @@ interface MockIngredient {
   allergens: string[];
   dietaryTypes: string[];
   nutritionalInfo: Record<string, number>;
-  substitutions: Array<{
+  substitutions: {
     ingredient: string;
     ratio: number;
     notes: string;
-  }>;
+  }[];
   imageUrl: string;
   isActive: boolean;
   createdAt: string;

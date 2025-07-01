@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { AuthStrategy } from '../enums/environment.enum';
-import { AuthConfig } from '../interfaces/auth.config.interface';
+import { AuthConfig, OAuthProviderConfig } from '../interfaces/auth.config.interface';
 
 /**
  * Authentication configuration service
@@ -10,14 +10,18 @@ import { AuthConfig } from '../interfaces/auth.config.interface';
  */
 @Injectable()
 export class AuthConfigService {
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Get authentication configuration
    * @returns Authentication configuration object
    */
   get auth(): AuthConfig {
-    return this.configService.get<AuthConfig>('auth')!;
+    const authConfig = this.configService.get<AuthConfig>('auth');
+    if (!authConfig) {
+      throw new Error('Authentication configuration is not defined');
+    }
+    return authConfig;
   }
 
   /**
@@ -96,7 +100,7 @@ export class AuthConfigService {
    * Get Google OAuth configuration
    * @returns Google OAuth configuration
    */
-  get googleOAuth() {
+  get googleOAuth(): OAuthProviderConfig | undefined {
     return this.auth.oauthProviders?.['google'];
   }
 
@@ -104,7 +108,7 @@ export class AuthConfigService {
    * Get GitHub OAuth configuration
    * @returns GitHub OAuth configuration
    */
-  get githubOAuth() {
+  get githubOAuth(): OAuthProviderConfig | undefined {
     return this.auth.oauthProviders?.['github'];
   }
 

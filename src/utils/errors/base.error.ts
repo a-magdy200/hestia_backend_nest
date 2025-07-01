@@ -20,12 +20,7 @@ export abstract class BaseError extends Error {
    * @param statusCode - HTTP status code
    * @param context - Optional error context data
    */
-  constructor(
-    message: string,
-    code: string,
-    statusCode: number = 500,
-    context?: Record<string, unknown>,
-  ) {
+  constructor(message: string, code: string, statusCode = 500, context?: Record<string, unknown>) {
     super(message);
 
     this.name = this.constructor.name;

@@ -5,6 +5,9 @@ import { Repository, FindOptionsWhere } from 'typeorm';
 import { ErrorLog } from '@/database/entities/monitoring.entity';
 import { LoggingService } from '@/services/logging.service';
 
+/**
+ *
+ */
 export interface IErrorLogData {
   errorCode: string;
   message: string;
@@ -127,7 +130,7 @@ export class ErrorMonitoringService {
   ): Promise<{
     totalErrors: number;
     errorRate: number;
-    topErrorTypes: Array<{ errorType: string; count: number }>;
+    topErrorTypes: { errorType: string; count: number }[];
   }> {
     try {
       const queryBuilder = this.buildErrorStatsQuery(startDate, endDate);
